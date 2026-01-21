@@ -1361,9 +1361,9 @@
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineCap = 'round';
 
-            // 外层柔光
+            // 外层柔光 - 稍微减弱，突出中心
             const blurGradient = ctx.createRadialGradient(center, center, 0, center, center, center);
-            blurGradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+            blurGradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
             blurGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.fillStyle = blurGradient;
             ctx.fillRect(0, 0, size, size);
@@ -1383,11 +1383,11 @@
                 // 添加小分叉
                 const branchAngle1 = angle + Math.PI / 6;
                 const branchAngle2 = angle - Math.PI / 6;
-                const branchDist = center * 0.4;
+                const branchDist = center * 0.45;
                 const branchLen = center * 0.3;
 
                 ctx.lineWidth = 3;
-                // 分叉 1
+                // 分叉
                 const bx = center + Math.cos(angle) * branchDist;
                 const by = center + Math.sin(angle) * branchDist;
                 ctx.beginPath();
@@ -1400,10 +1400,16 @@
                 ctx.stroke();
             }
 
-            // 中心亮点
+            // 中心亮点 - 更加明亮、实心，确保远距离看起来像圆点
             ctx.fillStyle = '#FFFFFF';
             ctx.beginPath();
-            ctx.arc(center, center, center * 0.15, 0, Math.PI * 2);
+            ctx.arc(center, center, center * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 在中心再加一个极小的纯白实心圆
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(center, center, center * 0.1, 0, Math.PI * 2);
             ctx.fill();
 
             const texture = new THREE.CanvasTexture(canvas);
@@ -1459,7 +1465,7 @@
 
         // 创建前景雪花系统（优化的唯美雪花）
         function createOptimizedSnow() {
-            const snowCount = 2800; // 适当增加数量，平衡浪漫感
+            const snowCount = 4500; // 增加数量
             const snowGeo = new THREE.BufferGeometry();
             const positions = new Float32Array(snowCount * 3);
             const velocities = new Float32Array(snowCount);
@@ -1472,10 +1478,10 @@
                 positions[i * 3 + 1] = Math.random() * 40 - 5;
                 positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
 
-                velocities[i] = 0.008 + Math.random() * 0.015; // 减慢下落速度
-                sways[i] = 0.02 + Math.random() * 0.04;     // 减小摆动幅度，更平缓
+                velocities[i] = 0.012 + Math.random() * 0.025; // 稍微加快速度
+                sways[i] = 0.02 + Math.random() * 0.04;
                 phases[i] = Math.random() * Math.PI * 2;
-                sizes[i] = 0.12 + Math.random() * 0.2;      // 稍微缩小一点
+                sizes[i] = 0.1 + Math.random() * 0.35;      // 增加尺寸变化范围，近大远小更明显
             }
 
             snowGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -3849,6 +3855,7 @@
         }
 
         // 创建更加唯美的雪花纹理
+        // 创建雪花专用纹理
         function createSnowTexture() {
             const size = 128;
             const canvas = document.createElement('canvas');
@@ -3862,9 +3869,9 @@
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineCap = 'round';
 
-            // 外层柔光
+            // 外层柔光 - 稍微减弱，突出中心
             const blurGradient = ctx.createRadialGradient(center, center, 0, center, center, center);
-            blurGradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+            blurGradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
             blurGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.fillStyle = blurGradient;
             ctx.fillRect(0, 0, size, size);
@@ -3884,11 +3891,11 @@
                 // 添加小分叉
                 const branchAngle1 = angle + Math.PI / 6;
                 const branchAngle2 = angle - Math.PI / 6;
-                const branchDist = center * 0.4;
+                const branchDist = center * 0.45;
                 const branchLen = center * 0.3;
 
                 ctx.lineWidth = 3;
-                // 分叉 1
+                // 分叉
                 const bx = center + Math.cos(angle) * branchDist;
                 const by = center + Math.sin(angle) * branchDist;
                 ctx.beginPath();
@@ -3901,10 +3908,16 @@
                 ctx.stroke();
             }
 
-            // 中心亮点
+            // 中心亮点 - 更加明亮、实心，确保远距离看起来像圆点
             ctx.fillStyle = '#FFFFFF';
             ctx.beginPath();
-            ctx.arc(center, center, center * 0.15, 0, Math.PI * 2);
+            ctx.arc(center, center, center * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 在中心再加一个极小的纯白实心圆
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(center, center, center * 0.1, 0, Math.PI * 2);
             ctx.fill();
 
             const texture = new THREE.CanvasTexture(canvas);
@@ -3912,7 +3925,7 @@
         }
 
         function createOverlaySnow() {
-            const snowCount = 2200; // 减少雪花数量
+            const snowCount = 5500; // 显著增加雪花数量
             const snowGeo = new THREE.BufferGeometry();
             const positions = new Float32Array(snowCount * 3);
             const velocities = new Float32Array(snowCount); // 下落速度
@@ -3927,10 +3940,10 @@
                 positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
 
                 // 物理属性
-                velocities[i] = 0.008 + Math.random() * 0.015; // 减慢速度
-                sways[i] = 0.02 + Math.random() * 0.04;     // 减小摇摆
+                velocities[i] = 0.01 + Math.random() * 0.022; // 稍微加快速度
+                sways[i] = 0.02 + Math.random() * 0.04;     // 摇摆
                 phases[i] = Math.random() * Math.PI * 2;
-                sizes[i] = 0.1 + Math.random() * 0.2;     // 稍微缩小尺寸
+                sizes[i] = 0.08 + Math.random() * 0.32;     // 增加尺寸变化范围，近大远小更明显
             }
 
             snowGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
