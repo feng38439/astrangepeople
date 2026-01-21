@@ -1478,7 +1478,7 @@
                 positions[i * 3 + 1] = Math.random() * 40 - 5;
                 positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
 
-                velocities[i] = 0.012 + Math.random() * 0.025; // 稍微加快速度
+                velocities[i] = 0.005 + Math.random() * 0.016; // 减慢下落速度，营造浪漫感
                 sways[i] = 0.02 + Math.random() * 0.04;
                 phases[i] = Math.random() * Math.PI * 2;
                 sizes[i] = 0.1 + Math.random() * 0.35;      // 增加尺寸变化范围，近大远小更明显
@@ -3940,7 +3940,7 @@
                 positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
 
                 // 物理属性
-                velocities[i] = 0.01 + Math.random() * 0.022; // 稍微加快速度
+                velocities[i] = 0.004 + Math.random() * 0.01; // 减慢下落速度
                 sways[i] = 0.02 + Math.random() * 0.04;     // 摇摆
                 phases[i] = Math.random() * Math.PI * 2;
                 sizes[i] = 0.08 + Math.random() * 0.32;     // 增加尺寸变化范围，近大远小更明显
