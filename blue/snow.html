@@ -1,0 +1,4137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNOW ❄</title>
+    <link href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=block" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden !important;
+            background: #000;
+            font-family: Arial, sans-serif;
+            cursor: grab;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        body {
+            position: relative;
+        }
+
+
+
+        .reset-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            z-index: 100;
+            display: none;
+            /* 初始隐藏，只在星空模式下显示 */
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .starfield-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .starfield-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .starfield-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .star-icon {
+            font-size: 20px;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        body:active {
+            cursor: grabbing;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .title {
+            position: absolute;
+            top: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFD700;
+            font-size: 3em;
+            font-family: "Zhi Mang Xing", cursive, "STKaiti", serif;
+            font-weight: bold;
+            line-height: 1.2;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.4);
+            z-index: 100;
+            pointer-events: none;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            from {
+                text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.4);
+            }
+
+            to {
+                text-shadow: 0 0 25px rgba(255, 215, 0, 0.9), 0 0 50px rgba(255, 215, 0, 0.7), 0 0 75px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        .photo-frame {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 280px;
+            height: 350px;
+            border: 10px solid #FFD700;
+            border-radius: 8px;
+            background: #fff;
+            padding: 12px;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 50;
+            display: none;
+            opacity: 0;
+        }
+
+        .photo-frame.show {
+            display: block;
+        }
+
+        .photo-frame.visible {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .photo-frame.angle-1 {
+            transform: translate(-50%, -50%) scale(1) rotate(-3deg);
+        }
+
+        .photo-frame.angle-2 {
+            transform: translate(-50%, -50%) scale(1) rotate(3deg);
+        }
+
+        .photo-frame.angle-3 {
+            transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+        }
+
+        .photo-frame.angle-4 {
+            transform: translate(-50%, -50%) scale(1) rotate(4deg);
+        }
+
+        /* 密码锁样式 */
+        #password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1a0a0a 0%, #050505 100%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 10000;
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            cursor: pointer;
+            /* 让用户知道可以点击 */
+        }
+
+        #overlay-canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .password-container {
+            display: none;
+            /* 隐藏输入框容器 */
+        }
+
+        #password-overlay.unlocked {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.1);
+        }
+
+        .password-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05) 40%, transparent 50%, rgba(255, 255, 255, 0.1));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .password-container.morph-to-heart {
+            width: 180px;
+            height: 180px;
+            padding: 0;
+            margin-bottom: 40vh;
+            /* 变成爱心后移向屏幕中间 */
+            background: radial-gradient(circle at 30% 30%, #ff4d4d, #990000);
+            box-shadow:
+                0 0 50px rgba(255, 0, 0, 0.8),
+                inset 0 0 30px rgba(0, 0, 0, 0.5);
+            border: none;
+            clip-path: path('M90 155c-50-35-85-70-85-105 0-35 25-60 60-60 20 0 35 15 45 30 10-15 25-30 45-30 35 0 60 25 60 60 0 35-35 70-85 105z');
+            transition: all 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            animation: heartFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes heartFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
+            }
+
+            50% {
+                transform: translateY(-15px) scale(1.05);
+                filter: drop-shadow(0 0 40px rgba(255, 0, 0, 0.9));
+            }
+        }
+
+        .password-container.morph-to-heart * {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s;
+        }
+
+        .heart-submit {
+            font-size: 45px;
+            cursor: pointer;
+            display: inline-block;
+            filter: drop-shadow(0 0 15px rgba(255, 51, 51, 0.8));
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: heartBeat 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            margin-top: 10px;
+        }
+
+        .heart-submit:hover {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 25px rgba(255, 51, 51, 1));
+        }
+
+        .heart-submit:active {
+            transform: scale(0.9);
+        }
+
+        @keyframes heartBeat {
+
+            0%,
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 15px rgba(255, 51, 51, 0.8));
+            }
+
+            50% {
+                transform: scale(1.1);
+                filter: drop-shadow(0 0 25px rgba(255, 51, 51, 1));
+            }
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        #password-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            letter-spacing: 5px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #password-input:focus {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 0 20px rgba(255, 255, 255, 0.05),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+        }
+
+        #password-input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 2px;
+        }
+
+        #password-error {
+            color: #ff4d4d;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            height: 20px;
+            margin-bottom: 5px;
+            transform: translateY(5px);
+            filter: drop-shadow(0 0 5px rgba(255, 77, 77, 0.3));
+        }
+
+        #password-error.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .photo-frame.angle-5 {
+            transform: translate(-50%, -50%) scale(1) rotate(-2deg);
+        }
+
+        .photo-frame.angle-6 {
+            transform: translate(-50%, -50%) scale(1) rotate(2deg);
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background: #ff6b6b;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 20px;
+            line-height: 26px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .close-btn:hover {
+            background: #ff5252;
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .gift-click-zone {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            cursor: pointer;
+            z-index: 50;
+            /* 降低 z-index，使其在密码层之下 */
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gift-click-zone:hover {
+            transform: scale(1.1);
+        }
+
+        .gift-click-zone::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.1;
+            }
+        }
+
+        .letter-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 200;
+            display: none;
+            opacity: 0;
+            width: 90%;
+            max-width: 400px;
+            /* 稍微增加宽度，使背景图更清晰 */
+        }
+
+        .letter-popup.show {
+            display: block;
+        }
+
+        .letter-popup.visible {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .letter-content {
+            background: #fff9f0;
+            border: 2px solid #d4a76a;
+            border-radius: 20px;
+            /* 更圆润的边角 */
+            padding: 15px 18px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            /* 文字居中 */
+            position: relative;
+            background-image: url('img/xiaohan1.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* 添加一个半透明蒙层，确保文字可读 */
+        .letter-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 249, 240, 0.7);
+            border-radius: 18px;
+            z-index: 0;
+        }
+
+        .letter-header {
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-align: center;
+            filter: drop-shadow(1px 2px 3px rgba(0, 0, 0, 0.1));
+            position: relative;
+            z-index: 1;
+            font-family: "Zhi Mang Xing", serif;
+        }
+
+        .letter-footer {
+            font-size: 24px;
+            margin-top: 8px;
+            text-align: center;
+            filter: drop-shadow(1px 2px 3px rgba(0, 0, 0, 0.1));
+            position: relative;
+            z-index: 1;
+            display: none;
+            /* 初始隐藏，打字结束后显示 */
+        }
+
+        .letter-footer.show {
+            display: block;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .letter-text {
+            color: #3d2b1f;
+            /* 稍微加深颜色，更有墨水感 */
+            font-family: "Zhi Mang Xing", "STKaiti", "KaiTi SC", "STKaiti-SC-Regular", "Kaiti", "楷体", serif;
+            font-weight: 400;
+            /* Zhi Mang Xing 只有 400 */
+            font-size: 18px;
+            /* 手写体通常偏小，稍微调大 */
+            letter-spacing: 0.5px;
+            /* 手写体不宜间距过大 */
+            text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.05);
+            /* 极细微的阴影增加厚度感 */
+            line-height: 1.35;
+            /* 进一步降低行高以适应移动端高度 */
+            position: relative;
+            z-index: 1;
+            min-height: 1.6em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: inline-block;
+            /* 配合居中 */
+            text-align: left;
+            /* 换行后左对齐更像书信 */
+            max-width: 100%;
+            -webkit-font-smoothing: antialiased;
+            /* 苹果端平滑处理 */
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 打字机光标效果 */
+        .letter-text::after {
+            content: '|';
+            display: inline-block;
+            margin-left: 5px;
+            animation: blink 0.8s infinite;
+            font-weight: 100;
+            color: #4a3728;
+            opacity: 0.7;
+        }
+
+        .letter-text.typing-done::after {
+            display: none;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes textGlow {
+            from {
+                text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.05);
+            }
+
+            to {
+                text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .letter-close {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #c9a66b 0%, #a67c52 100%);
+            border: 2px solid #8b5a2b;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            line-height: 30px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            font-family: Arial, sans-serif;
+            z-index: 210;
+        }
+
+        .letter-close:hover {
+            background: linear-gradient(135deg, #d4b078 0%, #b8895a 100%);
+            transform: scale(1.15) rotate(90deg);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 密码锁 -->
+    <div id="password-overlay">
+        <div id="overlay-canvas-container"></div>
+        <div class="password-container">
+            <div class="input-wrapper">
+                <input type="password" id="password-input" placeholder="••••••••" maxlength="8" autocomplete="off">
+            </div>
+            <div id="password-error">密码错误，请重试</div>
+            <div id="password-submit" class="heart-submit">❤️</div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="title">Merry<br>Christmas</div>
+    <div class="photo-frame" id="photoFrame">
+        <div class="close-btn" id="closeBtn">×</div>
+        <img id="photoImg" src="" alt="Photo">
+    </div>
+
+    <div class="letter-popup" id="letterPopup">
+        <div class="letter-close" id="letterClose">×</div>
+        <div class="letter-content">
+            <div class="letter-header">❤️</div>
+            <div class="letter-text"></div>
+        </div>
+    </div>
+
+    <!-- <div class="hint">拖拽旋转 点击礼物</div> -->
+
+    <!-- 礼盒透明点击框 -->
+    <div class="gift-click-zone" id="giftClick1" onclick="openGroundGift3D(1)"></div>
+    <div class="gift-click-zone" id="giftClick2" onclick="openGroundGift3D(2)"></div>
+    <div class="gift-click-zone" id="giftClick3" onclick="openGroundGift3D(3)"></div>
+    <div class="gift-click-zone" id="giftClick4" onclick="openGroundGift3D(4)"></div>
+
+
+
+
+
+
+
+    <script>
+
+
+        // 场景变量
+        // (已经合并到 foregroundSnow)
+
+        // 场景设置
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.domElement.style.display = 'block';
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 1);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.physicallyCorrectLights = true; // 使用物理正确的光照计算
+        renderer.outputEncoding = THREE.sRGBEncoding; // 使用sRGB编码输出
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; // 使用ACES胶片色调映射
+        renderer.toneMappingExposure = 0.8; // 降低曝光度，减少刺眼效果
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // 相机位置
+        camera.position.z = 5;
+
+        // 创建方形粒子纹理
+        function createSquareTexture(color) {
+            const size = 128;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // 绘制方形，带更柔和的发光效果（降低亮度）
+            const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(0.2, color + 'EE');
+            gradient.addColorStop(0.4, color + 'DD');
+            gradient.addColorStop(0.6, color + 'AA');
+            gradient.addColorStop(0.8, color + '55');
+            gradient.addColorStop(1, color + '00');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // 添加清晰的方形核心，但更柔和
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = color;
+            const padding = size * 0.35;
+            ctx.fillRect(padding, padding, size - padding * 2, size - padding * 2);
+            ctx.globalAlpha = 1.0;
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // 创建圆形粒子纹理（用于礼物）- 柔和版本
+        function createCircleTexture(color) {
+            const size = 256; // 提高纹理分辨率
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // 创建更柔和的径向渐变，减少突兀感
+            const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(0.15, color + 'EE');
+            gradient.addColorStop(0.3, color + 'BB');
+            gradient.addColorStop(0.5, color + '77');
+            gradient.addColorStop(0.7, color + '33');
+            gradient.addColorStop(0.85, color + '11');
+            gradient.addColorStop(1, color + '00');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 添加更柔和的内部高光效果
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.globalAlpha = 1.0;
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // 启用纹理调试（在浏览器控制台中输入 debugTexture = true）
+        window.debugTexture = false;
+
+        // 调整颜色亮度的辅助函数
+        function adjustBrightness(hexColor, percent) {
+            const num = parseInt(hexColor.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255))
+                .toString(16).slice(1);
+        }
+
+        // 绘制小星星
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // 绘制小雪花
+        function drawSnowflake(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            for (let i = 0; i < 6; i++) {
+                ctx.rotate(Math.PI / 3);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -size);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // 添加小分支
+                ctx.beginPath();
+                ctx.moveTo(0, -size * 0.6);
+                ctx.lineTo(-size * 0.2, -size * 0.8);
+                ctx.moveTo(0, -size * 0.6);
+                ctx.lineTo(size * 0.2, -size * 0.8);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // 绘制花朵
+        function drawFlower(ctx, cx, cy, radius) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // 绘制5个花瓣
+            for (let i = 0; i < 5; i++) {
+                ctx.rotate(Math.PI * 2 / 5);
+                ctx.beginPath();
+                ctx.ellipse(0, radius * 0.6, radius * 0.4, radius * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 绘制花心
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFD700';
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 绘制松果
+        function drawPinecone(ctx, cx, cy, size) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // 松果主体
+            ctx.fillStyle = '#8B4513';
+            for (let i = 0; i < 5; i++) {
+                const y = -size * 0.4 + i * size * 0.2;
+                const width = size * (0.3 - i * 0.04);
+                ctx.beginPath();
+                ctx.ellipse(0, y, width, size * 0.08, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 松果顶部
+            ctx.fillStyle = '#654321';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.5, size * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 绘制圣诞糖果 cane
+        function drawCandyCane(ctx, cx, cy, size) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // 糖果 cane 主体
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = size * 0.15;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, size * 0.5);
+            ctx.lineTo(0, -size * 0.2);
+            ctx.arc(size * 0.2, -size * 0.2, size * 0.2, Math.PI, Math.PI * 1.5);
+            ctx.stroke();
+
+            // 白色条纹
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = size * 0.08;
+            ctx.beginPath();
+            ctx.moveTo(0, size * 0.4);
+            ctx.lineTo(0, -size * 0.2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(size * 0.2, -size * 0.2, size * 0.2, Math.PI, Math.PI * 1.5);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // 绘制圣诞花环
+        function drawWreath(ctx, cx, cy, size) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // 花环主体
+            ctx.fillStyle = '#228B22';
+            for (let i = 0; i < 36; i++) {
+                const angle = (i / 36) * Math.PI * 2;
+                const x = Math.cos(angle) * size * 0.5;
+                const y = Math.sin(angle) * size * 0.5;
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.12, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 红色浆果装饰
+            ctx.fillStyle = '#DC143C';
+            const berryPositions = [
+                { x: 0, y: -size * 0.5 },
+                { x: size * 0.35, y: -size * 0.35 },
+                { x: size * 0.5, y: 0 },
+                { x: size * 0.35, y: size * 0.35 },
+                { x: 0, y: size * 0.5 },
+                { x: -size * 0.35, y: size * 0.35 },
+                { x: -size * 0.5, y: 0 },
+                { x: -size * 0.35, y: -size * 0.35 }
+            ];
+            berryPositions.forEach(pos => {
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, size * 0.06, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 金色丝带
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.15, -size * 0.5);
+            ctx.lineTo(size * 0.15, -size * 0.5);
+            ctx.lineTo(size * 0.25, -size * 0.7);
+            ctx.lineTo(-size * 0.25, -size * 0.7);
+            ctx.closePath();
+            ctx.fill();
+
+            // 丝带尾部
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.1, -size * 0.7);
+            ctx.lineTo(-size * 0.15, -size * 0.9);
+            ctx.lineTo(-size * 0.05, -size * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(size * 0.1, -size * 0.7);
+            ctx.lineTo(size * 0.15, -size * 0.9);
+            ctx.lineTo(size * 0.05, -size * 0.7);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 绘制冬青叶
+        function drawHollyLeaf(ctx, cx, cy, size, rotation) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(rotation);
+
+            ctx.fillStyle = '#228B22';
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.5);
+            ctx.quadraticCurveTo(size * 0.3, -size * 0.3, size * 0.4, 0);
+            ctx.quadraticCurveTo(size * 0.3, size * 0.3, 0, size * 0.5);
+            ctx.quadraticCurveTo(-size * 0.3, size * 0.3, -size * 0.4, 0);
+            ctx.quadraticCurveTo(-size * 0.3, -size * 0.3, 0, -size * 0.5);
+            ctx.fill();
+
+            // 叶脉
+            ctx.strokeStyle = '#1A5F1A';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.4);
+            ctx.lineTo(0, size * 0.4);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // 绘制圣诞彩带
+        function drawRibbon(ctx, x1, y1, x2, y2, width, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制圣诞老人
+        function drawSantaClaus(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 身体（红色）
+            ctx.fillStyle = '#DC143C';
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 脸部（白色）
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.3, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 帽子（红色）
+            ctx.fillStyle = '#DC143C';
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.4, -size * 0.5);
+            ctx.lineTo(size * 0.4, -size * 0.5);
+            ctx.lineTo(0, -size * 1.2);
+            ctx.closePath();
+            ctx.fill();
+
+            // 帽子上的毛球（白色）
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(0, -size * 1.2, size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 胡须（白色）
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(0, size * 0.1, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 眼睛（黑色）
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(-size * 0.15, -size * 0.35, size * 0.05, 0, Math.PI * 2);
+            ctx.arc(size * 0.15, -size * 0.35, size * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 绘制麋鹿
+        function drawReindeer(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 身体（棕色）
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 头部
+            ctx.beginPath();
+            ctx.arc(size * 0.5, -size * 0.2, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 腿
+            ctx.fillRect(-size * 0.5, size * 0.2, size * 0.15, size * 0.4);
+            ctx.fillRect(-size * 0.1, size * 0.2, size * 0.15, size * 0.4);
+            ctx.fillRect(size * 0.1, size * 0.2, size * 0.15, size * 0.4);
+            ctx.fillRect(size * 0.5, size * 0.2, size * 0.15, size * 0.4);
+
+            // 鹿角（棕色）
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            // 左角
+            ctx.moveTo(size * 0.4, -size * 0.3);
+            ctx.lineTo(size * 0.3, -size * 0.6);
+            ctx.lineTo(size * 0.2, -size * 0.5);
+            ctx.moveTo(size * 0.3, -size * 0.6);
+            ctx.lineTo(size * 0.25, -size * 0.8);
+            // 右角
+            ctx.moveTo(size * 0.6, -size * 0.3);
+            ctx.lineTo(size * 0.7, -size * 0.6);
+            ctx.lineTo(size * 0.8, -size * 0.5);
+            ctx.moveTo(size * 0.7, -size * 0.6);
+            ctx.lineTo(size * 0.75, -size * 0.8);
+            ctx.stroke();
+
+            // 鼻子（红色）
+            ctx.fillStyle = '#DC143C';
+            ctx.beginPath();
+            ctx.arc(size * 0.6, -size * 0.2, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 绘制雪花
+        function drawSnowflake(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 绘制六角雪花
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = size / 6;
+            ctx.lineCap = 'round';
+
+            for (let i = 0; i < 6; i++) {
+                ctx.rotate(Math.PI / 3);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, size);
+                ctx.stroke();
+
+                // 添加小分支
+                ctx.beginPath();
+                ctx.moveTo(0, size * 0.5);
+                ctx.lineTo(size * 0.3, size * 0.3);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, size * 0.5);
+                ctx.lineTo(-size * 0.3, size * 0.3);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // 绘制冬青叶
+        function drawHollyLeaf(ctx, x, y, size, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(-size * 0.5, -size * 0.5, -size * 0.3, -size);
+            ctx.quadraticCurveTo(0, -size * 0.7, size * 0.3, -size);
+            ctx.quadraticCurveTo(size * 0.5, -size * 0.5, 0, 0);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 绘制圣诞树
+        function drawChristmasTree(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 树干
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-size * 0.1, 0, size * 0.2, size * 0.3);
+
+            // 树冠 - 三层三角形
+            ctx.fillStyle = '#228B22';
+            for (let i = 0; i < 3; i++) {
+                const layerY = -size * 0.1 - i * size * 0.3;
+                const layerWidth = size * (0.8 - i * 0.2);
+                ctx.beginPath();
+                ctx.moveTo(0, layerY - size * 0.4);
+                ctx.lineTo(-layerWidth / 2, layerY);
+                ctx.lineTo(layerWidth / 2, layerY);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 树顶星星
+            ctx.fillStyle = '#FFD700';
+            drawStar(ctx, 0, -size * 1.2, 5, size * 0.15, size * 0.07);
+
+            // 树上装饰 - 彩色圆点
+            const decorations = [
+                { x: -size * 0.2, y: -size * 0.3, color: '#FF0000' },
+                { x: size * 0.2, y: -size * 0.3, color: '#FFD700' },
+                { x: -size * 0.15, y: -size * 0.5, color: '#FFD700' },
+                { x: size * 0.15, y: -size * 0.5, color: '#FF0000' },
+                { x: 0, y: -size * 0.7, color: '#FFFFFF' }
+            ];
+            decorations.forEach(deco => {
+                ctx.fillStyle = deco.color;
+                ctx.beginPath();
+                ctx.arc(deco.x, deco.y, size * 0.05, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        // 绘制铃铛
+        function drawBell(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 铃铛主体
+            ctx.beginPath();
+            ctx.arc(0, 0, size, Math.PI, 0, false);
+            ctx.lineTo(size, size * 0.3);
+            ctx.quadraticCurveTo(0, size * 0.5, -size, size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+
+            // 铃铛顶部
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 铃铛底部小圆
+            ctx.beginPath();
+            ctx.arc(0, size * 0.35, size * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 创建精美圣诞节礼物盒子纹理 - 使用彩色包装纸效果
+        function createGiftBoxTexture(color) {
+            const size = 256;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // 创建彩色包装纸背景 - 使用更鲜艳的颜色
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, size, size);
+
+            // 添加包装纸纹理图案 - 使用固定种子确保一致性
+            ctx.strokeStyle = adjustBrightness(color, -30);
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.3;
+
+            // 添加网格纹理
+            for (let i = 0; i < size; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, size);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(size, i);
+                ctx.stroke();
+            }
+
+            // 添加固定位置的雪花图案
+            ctx.globalAlpha = 0.4;
+            ctx.fillStyle = '#FFFFFF';
+            const snowflakePositions = [
+                { x: 30, y: 30 }, { x: 100, y: 50 }, { x: 170, y: 40 }, { x: 220, y: 60 },
+                { x: 50, y: 120 }, { x: 130, y: 140 }, { x: 200, y: 110 }, { x: 80, y: 200 }
+            ];
+            snowflakePositions.forEach(pos => {
+                drawSnowflake(ctx, pos.x, pos.y, 8);
+            });
+
+            // 添加固定位置的星星图案
+            const starPositions = [
+                { x: 60, y: 80 }, { x: 150, y: 90 }, { x: 210, y: 170 },
+                { x: 40, y: 160 }, { x: 120, y: 180 }, { x: 180, y: 220 }
+            ];
+            starPositions.forEach(pos => {
+                drawStar(ctx, pos.x, pos.y, 5, 10, 5);
+            });
+
+            ctx.globalAlpha = 1.0;
+
+            // 添加光泽效果
+            const shineGradient = ctx.createLinearGradient(0, 0, size, size);
+            shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+            shineGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.3)');
+            shineGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.1)');
+            shineGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = shineGradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // 添加更宽的装饰带 - 使用金色增强喜庆感
+            ctx.strokeStyle = '#FFD700'; // 金色装饰带
+            ctx.lineWidth = size * 0.08; // 增加装饰带宽度
+            ctx.beginPath();
+            ctx.moveTo(size / 2, 0);
+            ctx.lineTo(size / 2, size);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, size / 2);
+            ctx.lineTo(size, size / 2);
+            ctx.stroke();
+
+            // 添加更精美的蝴蝶结 - 使用金色增强节日气氛
+            ctx.fillStyle = '#FFD700';
+
+            // 蝴蝶结左翼
+            ctx.beginPath();
+            ctx.ellipse(size / 2 - size * 0.08, size / 2, size * 0.12, size * 0.06, -Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 蝴蝶结右翼
+            ctx.beginPath();
+            ctx.ellipse(size / 2 + size * 0.08, size / 2, size * 0.12, size * 0.06, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 蝴蝶结中心
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 添加小星星装饰
+            ctx.fillStyle = '#FFFFFF';
+            for (let i = 0; i < 5; i++) {
+                const x = (i + 1) * size / 6;
+                const y = size / 6;
+                drawStar(ctx, x, y, 5, size * 0.03, size * 0.015);
+            }
+
+            // 添加雪花装饰
+            ctx.fillStyle = '#FFFFFF';
+            for (let i = 0; i < 4; i++) {
+                const x = (i + 1) * size / 5;
+                const y = size * 5 / 6;
+                drawSnowflake(ctx, x, y, size * 0.02);
+            }
+
+            // 添加小铃铛装饰
+            ctx.fillStyle = '#FFD700';
+            for (let i = 0; i < 3; i++) {
+                const x = size * (0.2 + i * 0.3);
+                const y = size * 0.8;
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.02, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 铃铛把手
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x - size * 0.01, y - size * 0.02);
+                ctx.lineTo(x + size * 0.01, y - size * 0.02);
+                ctx.stroke();
+            }
+
+            // 添加冬青叶装饰
+            ctx.fillStyle = '#0F7B0F'; // 森林绿
+            for (let i = 0; i < 3; i++) {
+                const x = size * (0.15 + i * 0.7);
+                const y = size * 0.15;
+                drawHollyLeaf(ctx, x, y, size * 0.04);
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            // 调试：将canvas添加到页面以验证纹理是否正确创建
+            if (window.debugTexture) {
+                const debugImg = document.createElement('img');
+                debugImg.src = canvas.toDataURL();
+                debugImg.style.position = 'fixed';
+                debugImg.style.top = '10px';
+                debugImg.style.right = '10px';
+                debugImg.style.width = '100px';
+                debugImg.style.height = '100px';
+                debugImg.style.border = '1px solid red';
+                debugImg.style.zIndex = '9999';
+                document.body.appendChild(debugImg);
+            }
+
+            return texture;
+        }
+
+        // 创建雪花专用纹理
+        function createSnowTexture() {
+            const size = 256;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // 创建雪花渐变效果
+            const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            gradient.addColorStop(0, '#FFFFFF'); // 白色中心
+            gradient.addColorStop(0.2, '#FFFFFFEE');
+            gradient.addColorStop(0.4, '#FFFFFFCC');
+            gradient.addColorStop(0.6, '#FFFFFF88');
+            gradient.addColorStop(0.8, '#FFFFFF44');
+            gradient.addColorStop(0.95, '#FFFFFF11');
+            gradient.addColorStop(1, '#FFFFFF00');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // 添加更柔和的内部高光
+            ctx.globalAlpha = 0.6;
+            ctx.fillStyle = '#FFFFFF';
+            const padding = size * 0.35;
+            ctx.fillRect(padding, padding, size - padding * 2, size - padding * 2);
+
+            // 添加中心亮点
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#FFFFFF';
+            const centerPadding = size * 0.45;
+            ctx.fillRect(centerPadding, centerPadding, size - centerPadding * 2, size - centerPadding * 2);
+
+            ctx.globalAlpha = 1.0;
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // 创建雪花背景（白色雪花粒子）
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsTexture = createSnowTexture(); // 使用专用的雪花纹理
+        const starsVertices = [];
+        const starsColors = [];
+        const starsSizes = [];
+
+        for (let i = 0; i < 2500; i++) {
+            // 使用球形分布而不是立方体分布
+            const radius = Math.random() * 15 + 5; // 5-20的半径范围
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+
+            const x = radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.sin(phi) * Math.sin(theta);
+            const z = radius * Math.cos(phi);
+
+            starsVertices.push(x, y, z);
+
+            // 添加颜色变化（白色雪花）
+            const colorIntensity = 0.7 + Math.random() * 0.3; // 白色雪花
+            starsColors.push(colorIntensity, colorIntensity, colorIntensity); // 纯白色
+
+            // 添加大小变化（雪花大小）
+            starsSizes.push(0.08 + Math.random() * 0.08); // 增大雪花大小变化范围
+        }
+
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starsColors, 3));
+        starsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(starsSizes, 1));
+
+        const starsMaterial = new THREE.PointsMaterial({
+            map: starsTexture,
+            vertexColors: true,
+            size: 0.15, // 增大雪花尺寸
+            transparent: true,
+            opacity: 0.6, // 雪花透明度
+            blending: THREE.AdditiveBlending,
+            depthWrite: true, // 启用深度写入，使雪花可以显示在物体前面
+            depthTest: true, // 启用深度测试
+            sizeAttenuation: true
+        });
+
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        stars.renderOrder = -1; // 确保星星在背景渲染
+        scene.add(stars);
+
+        // 创建前景雪花系统（优化的唯美雪花）
+        function createOptimizedSnow() {
+            const snowCount = 1500;
+            const snowGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(snowCount * 3);
+            const velocities = new Float32Array(snowCount);
+            const sways = new Float32Array(snowCount);
+            const phases = new Float32Array(snowCount);
+            const sizes = new Float32Array(snowCount);
+
+            for (let i = 0; i < snowCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 40;
+                positions[i * 3 + 1] = Math.random() * 30 - 5;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+
+                velocities[i] = 0.01 + Math.random() * 0.03;
+                sways[i] = 0.02 + Math.random() * 0.05;
+                phases[i] = Math.random() * Math.PI * 2;
+                sizes[i] = 0.1 + Math.random() * 0.2;
+            }
+
+            snowGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            snowGeo.setAttribute('velocity', new THREE.BufferAttribute(velocities, 1));
+            snowGeo.setAttribute('sway', new THREE.BufferAttribute(sways, 1));
+            snowGeo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+            snowGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const snowMat = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.15,
+                map: createSnowTexture(),
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            const snow = new THREE.Points(snowGeo, snowMat);
+            snow.renderOrder = 0;
+            return snow;
+        }
+
+        const foregroundSnow = createOptimizedSnow();
+        scene.add(foregroundSnow);
+
+        // 创建粒子组
+        const particleGroup = new THREE.Group();
+        particleGroup.renderOrder = 1; // 确保树在地毯前面
+        scene.add(particleGroup);
+
+        // 创建粒子纹理
+        const goldTexture = createSquareTexture('#FFD700');
+        const redTexture = createCircleTexture('#FF6B6B');
+        const greenTexture = createSquareTexture('#00FF00');
+
+        // 粒子材质
+        const goldMaterial = new THREE.PointsMaterial({
+            map: goldTexture,
+            color: 0xFFD700,
+            size: 0.09,
+            transparent: true,
+            opacity: 0.7, // 降低不透明度
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            sizeAttenuation: true
+        });
+
+        const redMaterial = new THREE.PointsMaterial({
+            map: redTexture,
+            color: 0xFF6B6B,
+            size: 0.09,
+            transparent: true,
+            opacity: 0.5, // 降低不透明度
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            sizeAttenuation: true
+        });
+
+        const greenMaterial = new THREE.PointsMaterial({
+            map: greenTexture,
+            color: 0x00FF00,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.4, // 降低不透明度
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            sizeAttenuation: true
+        });
+
+        // 创建圣诞树形状的粒子 - 紧凑的树形结构
+        function createTreeParticles() {
+            const treeHeight = 3.2;
+            const baseWidth = 1.6;
+            const topWidth = 0.05;
+            const layers = 40;
+            const particles = [];
+            const giftPositions = [];
+
+            // 生成粒子 - 形成紧凑清晰的树形轮廓
+            for (let layer = 0; layer < layers; layer++) {
+                const layerProgress = layer / layers;
+                const layerY = -treeHeight / 2 + layerProgress * treeHeight;
+
+                // 计算该层的宽度（从底部到顶部逐渐变窄，更紧凑）
+                const layerWidth = baseWidth * (1 - layerProgress * 0.9);
+
+                // 根据层数调整粒子密度（中间层更密集，让树更紧凑）
+                const densityFactor = 1 - Math.abs(layerProgress - 0.5) * 0.5;
+                const particlesInLayer = Math.floor(120 * densityFactor * (1 - layerProgress * 0.2));
+
+                for (let i = 0; i < particlesInLayer; i++) {
+                    // 使用更均匀的角度分布
+                    const angle = (i / particlesInLayer) * Math.PI * 2;
+
+                    // 使用径向分布，中心密集，边缘稀疏（更集中在中心）
+                    const radialRandom = Math.random();
+                    const radiusFactor = Math.pow(radialRandom, 0.7);
+                    const radius = radiusFactor * layerWidth * 0.85;
+
+                    // 添加轻微的随机偏移，但保持树形
+                    const noise = (Math.random() - 0.5) * 0.08;
+                    const x = Math.cos(angle) * radius + noise;
+                    const z = Math.sin(angle) * radius + noise;
+
+                    // Y轴位置：在层内稍微随机分布
+                    const y = layerY + (Math.random() - 0.5) * (treeHeight / layers * 0.7);
+
+                    // 确保粒子在树形范围内（更严格的边界）
+                    const distanceFromCenter = Math.sqrt(x * x + z * z);
+                    const maxRadius = layerWidth * 0.9;
+                    if (distanceFromCenter <= maxRadius) {
+                        particles.push(new THREE.Vector3(x, y, z));
+                    }
+                }
+            }
+
+            // 增强树的轮廓 - 在边缘添加少量粒子，形成清晰的树形边界（紧凑）
+            const edgeParticles = [];
+            for (let layer = 0; layer < layers; layer++) {
+                const layerProgress = layer / layers;
+                const layerY = -treeHeight / 2 + layerProgress * treeHeight;
+                const layerWidth = baseWidth * (1 - layerProgress * 0.9);
+
+                // 在边缘添加少量轮廓粒子，让树形更清晰但保持紧凑
+                const edgeParticleCount = Math.floor(18 * (1 - layerProgress * 0.4));
+                for (let i = 0; i < edgeParticleCount; i++) {
+                    const angle = (i / edgeParticleCount) * Math.PI * 2;
+                    const radius = layerWidth * 0.88;
+                    const x = Math.cos(angle) * radius;
+                    const z = Math.sin(angle) * radius;
+                    const y = layerY + (Math.random() - 0.5) * 0.06;
+                    edgeParticles.push(new THREE.Vector3(x, y, z));
+                }
+            }
+            particles.push(...edgeParticles);
+
+            // 创建金色粒子（主要构成树体）- 更紧凑的分布
+            const goldGeometry = new THREE.BufferGeometry();
+            const goldPositions = [];
+            particles.forEach((pos, i) => {
+                const distanceFromCenter = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+                const maxRadius = baseWidth * (1 - (pos.y + treeHeight / 2) / treeHeight * 0.9);
+                const normalizedDistance = distanceFromCenter / maxRadius;
+
+                // 中心区域更密集，让树更紧凑
+                let goldChance;
+                if (normalizedDistance < 0.4) {
+                    goldChance = 0.95;
+                } else if (normalizedDistance < 0.7) {
+                    goldChance = 0.85;
+                } else {
+                    goldChance = 0.75;
+                }
+
+                if (Math.random() > (1 - goldChance)) {
+                    goldPositions.push(pos.x, pos.y, pos.z);
+                }
+            });
+            goldGeometry.setAttribute('position', new THREE.Float32BufferAttribute(goldPositions, 3));
+            const goldParticles = new THREE.Points(goldGeometry, goldMaterial);
+            particleGroup.add(goldParticles);
+
+            // 创建红色粒子（礼物）- 更少且分散在表层
+            const redGeometry = new THREE.BufferGeometry();
+            const redPositions = [];
+            let giftIndex = 0;
+            particles.forEach((pos, i) => {
+                // 红色粒子更均匀分布，减少突兀感
+                const layerProgress = (pos.y + treeHeight / 2) / treeHeight;
+                const distanceFromCenter = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+                const treeCurve = Math.sin(layerProgress * Math.PI) * 0.3 + 0.7;
+                const maxRadius = baseWidth * treeCurve * (1 - layerProgress * 0.7);
+                const normalizedDistance = distanceFromCenter / maxRadius;
+
+                // 使用更柔和的分布曲线，红色粒子更少且更均匀，主要分布在表层
+                const distributionCurve = Math.cos(normalizedDistance * Math.PI * 0.7);
+                const redProbability = 0.98 - distributionCurve * 0.02; // 大幅减少红色粒子数量
+
+                // 优先选择表层的粒子（距离中心较远的粒子）
+                const surfacePreference = normalizedDistance > 0.6 ? 0.5 : 1.0;
+
+                if (Math.random() > redProbability * surfacePreference) {
+                    redPositions.push(pos.x, pos.y, pos.z);
+                    // 标记为可点击的礼物，更均匀分布且主要在表层
+                    if (Math.random() > 0.92 && normalizedDistance > 0.5) { // 进一步减少可点击礼物的数量，且主要在表层
+                        giftPositions.push({ x: pos.x, y: pos.y, z: pos.z, index: giftIndex++ });
+                    }
+                }
+            });
+            redGeometry.setAttribute('position', new THREE.Float32BufferAttribute(redPositions, 3));
+            const redParticles = new THREE.Points(redGeometry, redMaterial);
+            particleGroup.add(redParticles);
+
+            // 创建绿色粒子（增加数量，作为装饰点缀）
+            const greenGeometry = new THREE.BufferGeometry();
+            const greenPositions = [];
+            particles.forEach((pos, i) => {
+                // 增加绿色粒子的数量，从1%增加到15%
+                if (Math.random() > 0.85) {
+                    greenPositions.push(pos.x, pos.y, pos.z);
+                }
+            });
+            if (greenPositions.length > 0) {
+                greenGeometry.setAttribute('position', new THREE.Float32BufferAttribute(greenPositions, 3));
+
+                // 创建更精美的绿色粒子材质
+                const greenMaterial = new THREE.PointsMaterial({
+                    map: greenTexture,
+                    color: 0x00FF00,
+                    size: 0.12,
+                    transparent: true,
+                    opacity: 0.7,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    sizeAttenuation: true
+                });
+
+                const greenParticles = new THREE.Points(greenGeometry, greenMaterial);
+                particleGroup.add(greenParticles);
+            }
+
+            return giftPositions;
+        }
+
+        // 创建可点击的礼物（用更大的发光球体表示）
+        function createGifts(giftPositions) {
+            const giftMeshes = [];
+            const giftTexture = createCircleTexture('#FF6B6B');
+            giftPositions.forEach((gift, index) => {
+                const geometry = new THREE.SphereGeometry(0.1, 16, 16);
+                const material = new THREE.MeshBasicMaterial({
+                    map: giftTexture,
+                    color: 0xFF6B6B,
+                    transparent: true,
+                    opacity: 0.7,
+                    emissive: 0xFF6B6B,
+                    emissiveIntensity: 0.2, // 降低自发光强度，减少刺眼效果
+                    blending: THREE.AdditiveBlending
+                });
+                const giftMesh = new THREE.Mesh(geometry, material);
+                giftMesh.position.set(gift.x, gift.y, gift.z);
+                giftMesh.renderOrder = 1; // 确保礼物在地毯前面
+                giftMesh.userData = { isGift: true, index: index };
+                particleGroup.add(giftMesh);
+                giftMeshes.push(giftMesh);
+            });
+            return giftMeshes;
+        }
+
+        const giftPositions = createTreeParticles();
+        const giftMeshes = createGifts(giftPositions);
+
+        // 创建圣诞树上的小礼盒
+        function createTreeGifts() {
+            const treeGifts = [];
+            const colors = ['#FF4444', '#44FF44', '#4444FF', '#FFFF44', '#FF44FF', '#44FFFF'];
+            const giftCount = 30; // 树上30个小礼盒
+
+            for (let i = 0; i < giftCount; i++) {
+                const color = colors[i % colors.length];
+                const giftSize = 0.12 + Math.random() * 0.05; // 小礼盒尺寸 0.12-0.17
+
+                // 创建小礼盒几何体
+                const geometry = new THREE.BoxGeometry(giftSize, giftSize, giftSize);
+
+                // 创建纹理
+                const texture = createGiftBoxTexture(color);
+
+                // 使用MeshStandardMaterial增强光照效果
+                const material = new THREE.MeshStandardMaterial({
+                    map: texture,
+                    depthTest: true,
+                    depthWrite: true,
+                    roughness: 0.3,
+                    metalness: 0.1,
+                    emissive: new THREE.Color(0x000000),
+                    emissiveIntensity: 0.1,
+                    envMapIntensity: 0.1
+                });
+
+                const giftBox = new THREE.Mesh(geometry, material);
+
+                // 计算在圣诞树表面的位置
+                const treeHeight = 3.2;
+                const baseWidth = 1.6;
+                const heightProgress = 0.2 + Math.random() * 0.6; // 在树的中上部
+                const y = -treeHeight / 2 + heightProgress * treeHeight;
+                const layerWidth = baseWidth * (1 - heightProgress * 0.9);
+                const radius = layerWidth * (0.6 + Math.random() * 0.3); // 在树表面
+                const angle = Math.random() * Math.PI * 2;
+
+                giftBox.position.x = Math.cos(angle) * radius;
+                giftBox.position.y = y;
+                giftBox.position.z = Math.sin(angle) * radius;
+
+                // 随机旋转
+                giftBox.rotation.x = Math.random() * Math.PI * 2;
+                giftBox.rotation.y = Math.random() * Math.PI * 2;
+                giftBox.rotation.z = Math.random() * Math.PI * 2;
+
+                // 启用阴影
+                giftBox.castShadow = true;
+                giftBox.receiveShadow = true;
+
+                particleGroup.add(giftBox);
+                treeGifts.push(giftBox);
+            }
+
+            return treeGifts;
+        }
+
+        const treeGifts = createTreeGifts();
+
+        // 绘制圣诞老人
+        function drawSantaClaus(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 身体（红色）
+            ctx.fillStyle = '#DC143C';
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 脸部（白色）
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.3, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 帽子（红色）
+            ctx.fillStyle = '#DC143C';
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.4, -size * 0.5);
+            ctx.lineTo(size * 0.4, -size * 0.5);
+            ctx.lineTo(0, -size * 1.2);
+            ctx.closePath();
+            ctx.fill();
+
+            // 帽子上的毛球（白色）
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(0, -size * 1.2, size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 胡须（白色）
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(0, size * 0.1, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 眼睛（黑色）
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(-size * 0.15, -size * 0.35, size * 0.05, 0, Math.PI * 2);
+            ctx.arc(size * 0.15, -size * 0.35, size * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 绘制麋鹿
+        function drawReindeer(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 身体（棕色）
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 头部
+            ctx.beginPath();
+            ctx.arc(size * 0.5, -size * 0.2, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 腿
+            ctx.fillRect(-size * 0.5, size * 0.2, size * 0.15, size * 0.4);
+            ctx.fillRect(-size * 0.1, size * 0.2, size * 0.15, size * 0.4);
+            ctx.fillRect(size * 0.1, size * 0.2, size * 0.15, size * 0.4);
+            ctx.fillRect(size * 0.5, size * 0.2, size * 0.15, size * 0.4);
+
+            // 鹿角（棕色）
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            // 左角
+            ctx.moveTo(size * 0.4, -size * 0.3);
+            ctx.lineTo(size * 0.3, -size * 0.6);
+            ctx.lineTo(size * 0.2, -size * 0.5);
+            ctx.moveTo(size * 0.3, -size * 0.6);
+            ctx.lineTo(size * 0.25, -size * 0.8);
+            // 右角
+            ctx.moveTo(size * 0.6, -size * 0.3);
+            ctx.lineTo(size * 0.7, -size * 0.6);
+            ctx.lineTo(size * 0.8, -size * 0.5);
+            ctx.moveTo(size * 0.7, -size * 0.6);
+            ctx.lineTo(size * 0.75, -size * 0.8);
+            ctx.stroke();
+
+            // 鼻子（红色）
+            ctx.fillStyle = '#DC143C';
+            ctx.beginPath();
+            ctx.arc(size * 0.6, -size * 0.2, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 创建3D地毯
+        function createCarpet() {
+            // 创建地毯几何体（平面）
+            const geometry = new THREE.PlaneGeometry(6, 6);
+
+            // 创建地毯材质
+            const textureCanvas = document.createElement('canvas');
+            const ctx = textureCanvas.getContext('2d');
+            textureCanvas.width = 512;
+            textureCanvas.height = 512;
+
+            // 1. 绘制更具高级感的酒红/勃艮第红渐变背景
+            const gradient = ctx.createRadialGradient(256, 256, 50, 256, 256, 400);
+            gradient.addColorStop(0, '#5a0a16'); // 深酒红 (Wine Red)
+            gradient.addColorStop(1, '#2d050b'); // 极深褐红 (Deep Burgundy)
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
+
+            // 1.5 增加丝绒质感效果 (Subtle Velvet Texture)
+            ctx.globalAlpha = 0.15;
+            for (let i = 0; i < 20; i++) {
+                const innerGlow = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+                innerGlow.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+                innerGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = innerGlow;
+                ctx.fillRect(0, 0, 512, 512);
+            }
+            ctx.globalAlpha = 1.0;
+
+            // 2. 增加地毯织物纹理感 (微小噪点)
+            for (let i = 0; i < 5000; i++) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.03})`;
+                ctx.fillRect(Math.random() * 512, Math.random() * 512, 1, 1);
+            }
+
+            // 3. 添加灰色高级感边框
+            ctx.strokeStyle = '#A0A0A0'; // 中灰色
+            ctx.lineWidth = 15;
+            ctx.strokeRect(10, 10, 492, 492);
+            ctx.lineWidth = 5;
+            ctx.strokeRect(30, 30, 452, 452);
+
+            // 4. 绘制四个角落的冬青叶装饰
+            const corners = [[45, 45], [467, 45], [45, 467], [467, 467]];
+            corners.forEach(([cx, cy]) => {
+                ctx.fillStyle = '#228B22'; // 森林绿
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, 15, 8, Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, 15, 8, -Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#FF0000'; // 红色浆果
+                ctx.beginPath();
+                ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 5. 绘制角色剪影 (女孩、男孩、两只小猫)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+
+            // --- 绘制女孩 (左侧) ---
+            const gx = 210, gy = 220;
+            ctx.beginPath(); ctx.arc(gx, gy, 22, 0, Math.PI * 2); ctx.fill(); // 头
+            ctx.beginPath(); ctx.arc(gx - 20, gy - 5, 8, 0, Math.PI * 2); ctx.arc(gx + 20, gy - 5, 8, 0, Math.PI * 2); ctx.fill(); // 辫子
+            ctx.beginPath(); ctx.moveTo(gx, gy + 22); ctx.lineTo(gx - 35, gy + 110); ctx.lineTo(gx + 35, gy + 110); ctx.closePath(); ctx.fill(); // 裙子
+
+            // --- 绘制男孩 (右侧) ---
+            const bx = 300, by = 220;
+            ctx.beginPath(); ctx.arc(bx, by, 22, 0, Math.PI * 2); ctx.fill(); // 头
+            ctx.fillRect(bx - 22, by - 25, 44, 15); // 头发
+            ctx.beginPath(); ctx.moveTo(bx - 25, by + 22); ctx.lineTo(bx + 25, by + 22); ctx.lineTo(bx + 28, by + 110); ctx.lineTo(bx - 28, by + 110); ctx.closePath(); ctx.fill(); // 身体
+
+            // --- 绘制爱心 (在两人之间) ---
+            ctx.fillStyle = '#FFB6C1';
+            function drawHeart(x, y, size) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.bezierCurveTo(x, y - size, x - size, y - size, x - size, y);
+                ctx.bezierCurveTo(x - size, y + size, x, y + size, x, y + size * 2);
+                ctx.bezierCurveTo(x, y + size, x + size, y + size, x + size, y);
+                ctx.bezierCurveTo(x + size, y - size, x, y - size, x, y);
+                ctx.fill();
+            }
+            drawHeart(255, 180, 12);
+            drawHeart(235, 150, 8);
+            drawHeart(275, 155, 8);
+
+            // --- 绘制小猫 1 & 2 ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            const cats = [[140, 310], [370, 310]];
+            cats.forEach(([cx, cy]) => {
+                ctx.beginPath(); ctx.ellipse(cx, cy, 15, 22, 0, 0, Math.PI * 2); ctx.fill(); // 身体
+                ctx.beginPath(); ctx.arc(cx, cy - 25, 12, 0, Math.PI * 2); ctx.fill(); // 头
+                ctx.beginPath(); ctx.moveTo(cx - 10, cy - 32); ctx.lineTo(cx - 12, cy - 45); ctx.lineTo(cx - 2, cy - 35); ctx.fill(); // 耳
+                ctx.beginPath(); ctx.moveTo(cx + 10, cy - 32); ctx.lineTo(cx + 12, cy - 45); ctx.lineTo(cx + 2, cy - 35); ctx.fill(); // 耳
+            });
+
+            // --- 绘制猫爪印 (Paw Prints) ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            function drawPaw(x, y) {
+                ctx.beginPath(); ctx.ellipse(x, y, 5, 4, 0, 0, Math.PI * 2); ctx.fill(); // 掌垫
+                ctx.beginPath(); ctx.arc(x - 5, y - 6, 2, 0, Math.PI * 2); ctx.fill(); // 趾垫
+                ctx.beginPath(); ctx.arc(x, y - 8, 2, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(x + 5, y - 6, 2, 0, Math.PI * 2); ctx.fill();
+            }
+            drawPaw(110, 350); drawPaw(125, 370);
+            drawPaw(400, 350); drawPaw(385, 370);
+
+            // 6. 添加装饰元素：雪花、星星和冷杉落叶
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random() * 512;
+                const y = Math.random() * 512;
+                const size = 1.5 + Math.random() * 2.5;
+                drawStar(ctx, x, y, 5, size, size / 2);
+            }
+
+            // --- 绘制冷杉落叶 (Fir Needles) ---
+            function drawFirNeedle(x, y, angle, length, opacity = 0.7, color = 'rgba(20, 60, 20, ') {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                // 使用传入的颜色基础
+                ctx.strokeStyle = color + opacity + ')';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(length, 0);
+                ctx.stroke();
+                // 增加分叉，模拟冷杉叶特征
+                ctx.lineWidth = 1.0;
+                for (let j = 0; j < 4; j++) {
+                    const px = (j + 1) * (length / 5);
+                    ctx.beginPath();
+                    ctx.moveTo(px, 0);
+                    ctx.lineTo(px + 3.5, 3.5);
+                    ctx.moveTo(px, 0);
+                    ctx.lineTo(px + 3.5, -3.5);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // 1. 全局随机散落的落叶 (避开角色区域)
+            for (let i = 0; i < 200; i++) {
+                const x = Math.random() * 460 + 26;
+                const y = Math.random() * 460 + 26;
+
+                // 避开女孩男孩中心区域 (170-340, 180-340) 和 小猫区域
+                if ((x > 160 && x < 350 && y > 150 && y < 350) ||
+                    (x > 110 && x < 170 && y > 270 && y < 350) ||
+                    (x > 340 && x < 400 && y > 270 && y < 350)) continue;
+
+                const angle = Math.random() * Math.PI * 2;
+                const length = 10 + Math.random() * 15;
+                drawFirNeedle(x, y, angle, length, 0.6);
+            }
+
+            // 2. 圣诞树下密集堆放的落叶 (位置下移，与地面礼盒呼应，避开角色)
+            const treeRootX = 256;
+            const treeRootY = 360;
+
+            // 第一层：底层深色落叶
+            for (let i = 0; i < 600; i++) {
+                const radius = Math.sqrt(Math.random()) * 110;
+                const angle_pos = Math.random() * Math.PI * 2;
+                const x = treeRootX + Math.cos(angle_pos) * radius;
+                const y = treeRootY + Math.sin(angle_pos) * radius;
+
+                if (x > 160 && x < 350 && y > 180 && y < 340) continue;
+
+                const angle_needle = Math.random() * Math.PI * 2;
+                const length = 12 + Math.random() * 12;
+                drawFirNeedle(x, y, angle_needle, length, 0.4, 'rgba(10, 30, 10, ');
+            }
+
+            // 第二层：中间层标准落叶
+            for (let i = 0; i < 800; i++) {
+                const radius = Math.sqrt(Math.random()) * 95;
+                const angle_pos = Math.random() * Math.PI * 2;
+                const x = treeRootX + Math.cos(angle_pos) * radius;
+                const y = treeRootY + Math.sin(angle_pos) * radius;
+
+                if (x > 160 && x < 350 && y > 180 && y < 340) continue;
+
+                const angle_needle = Math.random() * Math.PI * 2;
+                const length = 15 + Math.random() * 15;
+                const opacity = 0.5 + (1 - radius / 95) * 0.4;
+                drawFirNeedle(x, y, angle_needle, length, opacity, 'rgba(20, 60, 20, ');
+            }
+
+            // 第三层：顶层亮色落叶
+            for (let i = 0; i < 400; i++) {
+                const radius = Math.sqrt(Math.random()) * 80;
+                const angle_pos = Math.random() * Math.PI * 2;
+                const x = treeRootX + Math.cos(angle_pos) * radius;
+                const y = treeRootY + Math.sin(angle_pos) * radius;
+
+                if (x > 160 && x < 350 && y > 180 && y < 340) continue;
+
+                const angle_needle = Math.random() * Math.PI * 2;
+                const length = 10 + Math.random() * 10;
+                const opacity = 0.3 + (1 - radius / 80) * 0.3;
+                drawFirNeedle(x, y, angle_needle, length, opacity, 'rgba(40, 90, 40, ');
+            }
+
+            // 3. 在每个地上礼盒底部额外增加一些散落的落叶
+            const giftCanvasPositions = [
+                [179, 409], [213, 341], [298, 350], [333, 401]
+            ];
+            giftCanvasPositions.forEach(([gx, gy]) => {
+                for (let i = 0; i < 100; i++) {
+                    const radius = Math.sqrt(Math.random()) * 40;
+                    const angle_pos = Math.random() * Math.PI * 2;
+                    const x = gx + Math.cos(angle_pos) * radius;
+                    const y = gy + Math.sin(angle_pos) * radius;
+                    const angle_needle = Math.random() * Math.PI * 2;
+                    const length = 8 + Math.random() * 10;
+                    drawFirNeedle(x, y, angle_needle, length, 0.5, 'rgba(20, 60, 20, ');
+                }
+            });
+
+            // 7. 添加文字装饰
+            ctx.fillStyle = '#E0E0E0'; // 浅灰色，与边框呼应
+            ctx.font = 'bold 28px "Microsoft YaHei", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Merry Christmas & Always Together', 256, 445);
+
+            const texture = new THREE.CanvasTexture(textureCanvas);
+            texture.needsUpdate = true;
+
+            // 创建材质
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.95
+            });
+
+            // 创建地毯网格
+            const carpet = new THREE.Mesh(geometry, material);
+
+            // 将地毯放置在树的下方（y = -2，略低于树的底部）
+            carpet.position.y = -2;
+            carpet.position.z = -0.5; // 将地毯稍微向后移动，使其位于树的后面
+
+            // 旋转地毯使其水平放置
+            carpet.rotation.x = -Math.PI / 2;
+
+            // 启用阴影接收，使地毯可以接收其他物体的阴影
+            carpet.receiveShadow = true;
+
+            // 设置渲染顺序，确保地毯在树后面
+            carpet.renderOrder = -1;
+
+            // 设置用户数据以便识别
+            carpet.userData = { isCarpet: true };
+
+            return carpet;
+        }
+
+        // 创建地毯并添加到场景
+        const carpet = createCarpet();
+        scene.add(carpet);
+
+        // 添加光源以增强阴影效果
+        // 降低环境光强度，减少刺眼效果
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3); // 降低环境光强度
+        scene.add(ambientLight);
+
+        // 主方向光，提供主要照明和阴影（降低强度）
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6); // 降低方向光强度
+        directionalLight.position.set(3, 5, 2);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048; // 增加阴影贴图分辨率
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 20;
+        directionalLight.shadow.camera.left = -5;
+        directionalLight.shadow.camera.right = 5;
+        directionalLight.shadow.camera.top = 5;
+        directionalLight.shadow.camera.bottom = -5;
+        scene.add(directionalLight);
+
+        // 添加补充光源，增强立体感（降低强度）
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.2); // 降低补充光源强度
+        fillLight.position.set(-3, 3, -2);
+        scene.add(fillLight);
+
+        // 添加背光，增强轮廓效果（降低强度）
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.15); // 降低背光强度
+        backLight.position.set(0, 2, -5);
+        scene.add(backLight);
+
+        // 添加点光源，增强局部照明效果（降低强度）
+        const pointLight = new THREE.PointLight(0xffffff, 0.3, 10); // 降低点光源强度
+        pointLight.position.set(0, 1, 0);
+        pointLight.castShadow = true;
+        scene.add(pointLight);
+
+        // 创建地面礼盒数组
+        const groundGifts = [];
+
+        // 创建地面礼盒
+        function createGroundGift(color, x, z, index) {
+            // 随机化礼盒的长宽高，营造多样化形态（立着、躺着、扁平）
+            let width, height, depth;
+            const randomType = Math.random();
+
+            if (randomType < 0.3) {
+                // 立着的长方体
+                width = 0.3 + Math.random() * 0.1;
+                height = 0.45 + Math.random() * 0.15;
+                depth = 0.3 + Math.random() * 0.1;
+            } else if (randomType < 0.6) {
+                // 躺着的长方体
+                width = 0.45 + Math.random() * 0.15;
+                height = 0.25 + Math.random() * 0.1;
+                depth = 0.35 + Math.random() * 0.1;
+            } else {
+                // 正方体或接近正方体
+                const baseSize = 0.35 + Math.random() * 0.1;
+                width = height = depth = baseSize;
+            }
+
+            // 使用增强版的createGiftBox函数创建礼盒
+            const giftBox = createGiftBox(color, index, { width, height, depth }, true);
+
+            // 设置礼盒位置在地毯上
+            giftBox.position.x = x;
+            giftBox.position.y = -1.9 + height / 2; // 根据高度动态计算底部贴合位置
+            giftBox.position.z = z; // 直接使用传入的z坐标
+
+            // 添加随机旋转，营造自然散落感
+            // 如果是躺着的礼盒，可以有更大的倾斜角度
+            const isLying = height < width || height < depth;
+            giftBox.rotation.x = isLying ? (Math.random() - 0.5) * 0.1 : (Math.random() - 0.5) * 0.3;
+            giftBox.rotation.y = Math.random() * Math.PI * 2; // 随机Y轴旋转
+            giftBox.rotation.z = isLying ? (Math.random() - 0.5) * 0.1 : (Math.random() - 0.5) * 0.2;
+
+            // 启用阴影投射和接收，增强立体效果
+            giftBox.castShadow = true;
+            giftBox.receiveShadow = true;
+
+            // 设置用户数据标识为地面礼盒
+            giftBox.userData = {
+                isGroundGift: true,
+                index: index,
+                isOpen: false,
+                baseY: -1.9 + height / 2,
+                animationPhase: Math.random() * Math.PI * 2,
+                rotationSpeed: 0.005 + Math.random() * 0.005
+            };
+
+            // 添加到场景和数组中
+            scene.add(giftBox);
+            groundGifts.push(giftBox);
+
+            return giftBox;
+        }
+
+        // 在固定位置放置4个礼盒
+        function placeFixedGroundGifts() {
+            // 调整颜色和位置顺序，使第4个礼盒（索引4）是绿色且位于最右侧
+            const colors = ['#FF4444', '#FFFF44', '#4444FF', '#44FF44'];
+
+            // 固定位置坐标 (x, z)
+            const fixedPositions = [
+                { x: -0.9, z: 1.8 }, // 1: 左后 (红)
+                { x: -0.5, z: 1.0 }, // 2: 左前 (黄)
+                { x: 0.5, z: 1.1 },  // 3: 右前 (蓝)
+                { x: 0.9, z: 1.7 }   // 4: 右后 (绿) - 对应用户箭头的绿色箱子
+            ];
+
+            // 在固定位置放置礼盒
+            for (let i = 0; i < 4; i++) {
+                createGroundGift(colors[i], fixedPositions[i].x, fixedPositions[i].z, i + 1);
+            }
+        }
+
+        // 在固定位置放置4个礼盒
+        placeFixedGroundGifts();
+
+        // 创建更精美的五角星/钻石装饰
+        function createStar() {
+            // 创建五角星形状的钻石装饰
+            const starGroup = new THREE.Group();
+            const starY = 1.6;
+
+            // 创建五角星的核心形状
+            const starShape = new THREE.Shape();
+            const outerRadius = 0.25; // 增大五角星尺寸
+            const innerRadius = 0.12;
+
+            for (let i = 0; i < 5; i++) {
+                const angle1 = (i * 2 * Math.PI / 5) - Math.PI / 2;
+                const angle2 = ((i + 0.5) * 2 * Math.PI / 5) - Math.PI / 2;
+
+                if (i === 0) {
+                    starShape.moveTo(Math.cos(angle1) * outerRadius, Math.sin(angle1) * outerRadius);
+                } else {
+                    starShape.lineTo(Math.cos(angle1) * outerRadius, Math.sin(angle1) * outerRadius);
+                }
+                starShape.lineTo(Math.cos(angle2) * innerRadius, Math.sin(angle2) * innerRadius);
+            }
+            starShape.closePath();
+
+            // 创建五角星几何体
+            const starGeometry = new THREE.ShapeGeometry(starShape);
+            const starMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF, // 纯白色，与圣诞树更搭配
+                transparent: true,
+                opacity: 0.95,
+                emissive: 0xFFFFCC, // 淡黄色发光，温暖感
+                emissiveIntensity: 0.4, // 降低自发光强度，减少刺眼效果
+                side: THREE.DoubleSide
+            });
+
+            const starMesh = new THREE.Mesh(starGeometry, starMaterial);
+            starMesh.position.y = starY;
+            starMesh.rotation.z = Math.PI;
+            starGroup.add(starMesh);
+
+            // 创建钻石效果的多层五角星
+            for (let i = 0; i < 3; i++) {
+                const scale = 1 - i * 0.2;
+                const opacity = 0.7 - i * 0.2;
+                const layerStar = starMesh.clone();
+                layerStar.scale.set(scale, scale, scale);
+                layerStar.material = starMaterial.clone();
+                layerStar.material.opacity = opacity;
+                layerStar.position.z = i * 0.02;
+                starGroup.add(layerStar);
+            }
+
+            // 添加发光粒子效果
+            const glowGeometry = new THREE.BufferGeometry();
+            const glowPositions = [];
+
+            // 在五角星周围添加发光粒子
+            for (let i = 0; i < 30; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 0.2;
+                const height = starY + (Math.random() - 0.5) * 0.1;
+                glowPositions.push(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
+            }
+
+            glowGeometry.setAttribute('position', new THREE.Float32BufferAttribute(glowPositions, 3));
+            const glowMaterial = new THREE.PointsMaterial({
+                map: goldTexture,
+                color: 0xFFFFCC, // 淡黄色发光粒子，与圣诞树更搭配
+                size: 0.2, // 增大发光粒子尺寸
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const glowParticles = new THREE.Points(glowGeometry, glowMaterial);
+            starGroup.add(glowParticles);
+
+            // 添加旋转动画
+            starGroup.userData = {
+                rotationSpeed: 0.01,
+                isStar: true // 标识这是星星对象
+            };
+
+            particleGroup.add(starGroup);
+            return starGroup;
+        }
+
+        const treeStar = createStar();
+
+        // 创建流星效果
+        let shootingStars = [];
+
+        function createShootingStar() {
+            const shootingStar = {
+                geometry: new THREE.BufferGeometry(),
+                material: new THREE.LineBasicMaterial({
+                    color: 0xFFFFFF,
+                    opacity: 0,
+                    transparent: true
+                }),
+                positions: [],
+                startTime: Date.now(),
+                duration: 2000 + Math.random() * 1000,
+                active: false
+            };
+
+            // 初始化流星轨迹点
+            for (let i = 0; i < 20; i++) {
+                shootingStar.positions.push(0, 0, 0);
+            }
+
+            shootingStar.geometry.setAttribute('position', new THREE.Float32BufferAttribute(shootingStar.positions, 3));
+            shootingStar.line = new THREE.Line(shootingStar.geometry, shootingStar.material);
+            shootingStar.line.visible = false;
+
+            scene.add(shootingStar.line);
+            shootingStars.push(shootingStar);
+
+            return shootingStar;
+        }
+
+        // 创建5颗流星
+        for (let i = 0; i < 5; i++) {
+            createShootingStar();
+        }
+
+        function updateShootingStars() {
+            const time = Date.now();
+
+            shootingStars.forEach(star => {
+                if (!star.active && Math.random() < 0.002) { // 随机激活流星
+                    star.active = true;
+                    star.startTime = time;
+                    star.line.visible = true;
+
+                    // 随机起始位置和方向
+                    const startX = (Math.random() - 0.5) * 30;
+                    const startY = 10 + Math.random() * 10;
+                    const startZ = (Math.random() - 0.5) * 30;
+
+                    const endX = startX + (Math.random() - 0.5) * 20;
+                    const endY = -5;
+                    const endZ = startZ + (Math.random() - 0.5) * 20;
+
+                    // 更新流星轨迹
+                    for (let i = 0; i < 20; i++) {
+                        const t = i / 19;
+                        star.positions[i * 3] = startX + (endX - startX) * t;
+                        star.positions[i * 3 + 1] = startY + (endY - startY) * t;
+                        star.positions[i * 3 + 2] = startZ + (endZ - startZ) * t;
+                    }
+
+                    star.geometry.attributes.position.needsUpdate = true;
+                }
+
+                if (star.active) {
+                    const elapsed = time - star.startTime;
+                    const progress = elapsed / star.duration;
+
+                    if (progress >= 1) {
+                        star.active = false;
+                        star.line.visible = false;
+                        star.material.opacity = 0;
+                    } else {
+                        // 更新流星透明度
+                        if (progress < 0.1) {
+                            star.material.opacity = progress * 10;
+                        } else if (progress > 0.8) {
+                            star.material.opacity = (1 - progress) * 5;
+                        } else {
+                            star.material.opacity = 1;
+                        }
+                    }
+                }
+            });
+        }
+
+        // 创建精美礼物盒子
+        const giftBoxes = [];
+        const giftBoxColors = ['#FF4444', '#44FF44', '#FFD700', '#FF88CC', '#FF1493', '#00CED1', '#FF8C00', '#9370DB']; // 更多颜色选项
+
+        function createGiftBox(color, photoIndex, size = 0.35, isGroundGift = false) {
+            let width, height, depth;
+            if (typeof size === 'object') {
+                width = size.width;
+                height = size.height;
+                depth = size.depth;
+            } else {
+                width = height = depth = size;
+            }
+
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+
+            // 创建纹理
+            const texture = createGiftBoxTexture(color);
+
+            // 使用MeshStandardMaterial增强光照效果，使礼盒更具立体感
+            // 对于地面礼盒，使用更高质量的材质参数
+            const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                depthTest: true,
+                depthWrite: true,
+                roughness: isGroundGift ? 0.15 : 0.3, // 地面礼盒更光滑
+                metalness: isGroundGift ? 0.25 : 0.1, // 地面礼盒稍微增加金属感
+                emissive: new THREE.Color(0x000000), // 自发光颜色
+                emissiveIntensity: 0.1, // 自发光强度
+                envMapIntensity: isGroundGift ? 0.5 : 0.1, // 环境贴图强度，地面礼盒更强
+                clearcoat: isGroundGift ? 0.3 : 0, // 清漆层，增加光泽感
+                clearcoatRoughness: isGroundGift ? 0.1 : 0 // 清漆粗糙度
+            });
+
+            const box = new THREE.Mesh(geometry, material);
+            box.castShadow = true;
+            box.receiveShadow = true;
+            // 设置渲染顺序，确保礼盒在粒子前面
+            box.renderOrder = isGroundGift ? 2 : 1;
+            box.userData = {
+                isGiftBox: false, // 树上的礼盒不可点击
+                isTreeDecoration: true, // 标识为树上装饰
+                photoIndex: photoIndex,
+                originalScale: 1,
+                hoverScale: 1.2,
+                isGroundGift: isGroundGift // 标识是否为地面礼盒
+            };
+
+            // 如果是地面礼盒，添加额外的装饰元素
+            if (isGroundGift) {
+                // 添加丝带
+                addRibbonToGift(box, color, { width, height, depth });
+            }
+
+            return box;
+        }
+
+        // 为礼盒添加丝带装饰
+        function addRibbonToGift(giftBox, boxColor, boxSize) {
+            const { width, height, depth } = boxSize;
+
+            // 创建横向丝带
+            const ribbonGeometry = new THREE.BoxGeometry(width * 1.05, height * 0.15, depth * 0.05);
+            const ribbonMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFFFFF, // 白色丝带
+                roughness: 0.3,
+                metalness: 0.1,
+                clearcoat: 0.2,
+                clearcoatRoughness: 0.1
+            });
+            const ribbon = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
+            ribbon.position.y = height * 0.35; // 稍微靠上的位置
+            ribbon.castShadow = true;
+            ribbon.receiveShadow = true;
+            giftBox.add(ribbon);
+
+            // 创建纵向丝带
+            const verticalRibbonGeometry = new THREE.BoxGeometry(width * 0.15, height * 1.05, depth * 0.05);
+            const verticalRibbon = new THREE.Mesh(verticalRibbonGeometry, ribbonMaterial);
+            verticalRibbon.castShadow = true;
+            verticalRibbon.receiveShadow = true;
+            giftBox.add(verticalRibbon);
+
+            // 创建蝴蝶结
+            const bowSize = Math.min(width, depth) * 0.3;
+            const bowGroup = createBow(bowSize);
+            bowGroup.position.y = height * 0.45; // 放在礼盒顶部
+            bowGroup.position.z = depth * 0.03; // 稍微向前一点
+            giftBox.add(bowGroup);
+        }
+
+        // 创建蝴蝶结装饰
+        function createBow(size) {
+            const bowGroup = new THREE.Group();
+
+            // 创建蝴蝶结主体（两个圆盘）
+            const discGeometry = new THREE.CylinderGeometry(size * 0.3, size * 0.3, size * 0.05, 16);
+            const discMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFD700, // 金色
+                roughness: 0.2,
+                metalness: 0.6,
+                clearcoat: 0.3,
+                clearcoatRoughness: 0.1
+            });
+
+            const leftDisc = new THREE.Mesh(discGeometry, discMaterial);
+            leftDisc.position.x = -size * 0.25;
+            leftDisc.castShadow = true;
+            leftDisc.receiveShadow = true;
+            bowGroup.add(leftDisc);
+
+            const rightDisc = new THREE.Mesh(discGeometry, discMaterial);
+            rightDisc.position.x = size * 0.25;
+            rightDisc.castShadow = true;
+            rightDisc.receiveShadow = true;
+            bowGroup.add(rightDisc);
+
+            // 创建蝴蝶结中心
+            const centerGeometry = new THREE.SphereGeometry(size * 0.15, 16, 16);
+            const center = new THREE.Mesh(centerGeometry, discMaterial);
+            center.castShadow = true;
+            center.receiveShadow = true;
+            bowGroup.add(center);
+
+            // 创建蝴蝶结飘带（简化版）
+            const ribbonGeometry = new THREE.BoxGeometry(size * 0.05, size * 0.4, size * 0.02);
+            const ribbonMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFD700,
+                roughness: 0.3,
+                metalness: 0.3,
+                clearcoat: 0.2,
+                clearcoatRoughness: 0.1
+            });
+
+            const leftRibbon = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
+            leftRibbon.position.x = -size * 0.15;
+            leftRibbon.position.y = -size * 0.2;
+            leftRibbon.rotation.z = Math.PI / 6;
+            leftRibbon.castShadow = true;
+            leftRibbon.receiveShadow = true;
+            bowGroup.add(leftRibbon);
+
+            const rightRibbon = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
+            rightRibbon.position.x = size * 0.15;
+            rightRibbon.position.y = -size * 0.2;
+            rightRibbon.rotation.z = -Math.PI / 6;
+            rightRibbon.castShadow = true;
+            rightRibbon.receiveShadow = true;
+            bowGroup.add(rightRibbon);
+
+            return bowGroup;
+        }
+
+        // 在圣诞树上随机放置多个礼盒，增加高度和各种差异性
+        function placeGiftBoxesOnTree() {
+            const boxCount = 3; // 礼盒数量改为3个
+            const placedBoxes = []; // 存储已放置的礼盒位置，用于检测距离
+
+            for (let i = 0; i < boxCount; i++) {
+                let attempts = 0; // 尝试次数，防止无限循环
+                let validPosition = false;
+                let height, angle, finalRadius;
+
+                // 尝试找到一个不与其他礼盒太近的位置
+                while (!validPosition && attempts < 50) {
+                    // 随机选择颜色
+                    const colorIndex = Math.floor(Math.random() * giftBoxColors.length);
+                    const color = giftBoxColors[colorIndex];
+
+                    // 随机大小，增加差异性
+                    const size = 0.18 + Math.random() * 0.07; // 大小范围：0.18到0.25
+
+                    // 创建礼盒
+                    const giftBox = createGiftBox(color, i, size);
+
+                    // 限制在树的底部区域，高度范围：0.1到0.3
+                    height = 0.1 + Math.random() * 0.2;
+
+                    // 完全随机的角度
+                    angle = Math.random() * Math.PI * 2; // 0到360度
+
+                    // 计算当前高度的树的半径
+                    const treeRadius = Math.max(0.1, 0.8 - height * 0.5); // 树的半径随高度减小
+
+                    // 礼盒应该附着在树的底部表面，确保礼盒完全在树的外部
+                    // 礼盒的中心应该在树的半径加上礼盒尺寸的一半，这样礼盒就不会穿模
+                    const radius = treeRadius + size * 0.5; // 确保礼盒完全在树的外部
+
+                    // 减少半径随机偏移，避免礼盒离树太远或穿模
+                    const radiusVariation = (Math.random() - 0.5) * 0.1; // 减小半径变化范围到±0.05
+                    finalRadius = Math.max(treeRadius + size * 0.3, radius + radiusVariation); // 确保礼盒不会穿模
+
+                    // 计算实际位置
+                    const x = Math.cos(angle) * finalRadius;
+                    const z = Math.sin(angle) * finalRadius;
+
+                    // 检查与已放置礼盒的距离
+                    validPosition = true;
+                    for (const box of placedBoxes) {
+                        const distance = Math.sqrt(
+                            Math.pow(x - box.x, 2) +
+                            Math.pow(z - box.z, 2) +
+                            Math.pow(height - box.y, 2) * 2 // 高度差异权重加倍
+                        );
+
+                        // 如果距离太近，则位置无效
+                        if (distance < 0.4) { // 最小距离阈值
+                            validPosition = false;
+                            break;
+                        }
+                    }
+
+                    attempts++;
+                }
+
+                // 如果找到了有效位置，创建礼盒
+                if (validPosition) {
+                    // 随机选择颜色
+                    const colorIndex = Math.floor(Math.random() * giftBoxColors.length);
+                    const color = giftBoxColors[colorIndex];
+
+                    // 随机大小，增加差异性
+                    const size = 0.25 + Math.random() * 0.3; // 大小范围：0.25到0.55
+
+                    // 创建礼盒
+                    const giftBox = createGiftBox(color, i, size);
+
+                    giftBox.position.x = Math.cos(angle) * finalRadius;
+                    giftBox.position.y = height;
+                    giftBox.position.z = Math.sin(angle) * finalRadius;
+
+                    // 让礼盒面向外部，而不是朝向树中心
+                    // 计算礼盒应该朝向的方向（从树中心向外）
+                    const outwardDirection = new THREE.Vector3(giftBox.position.x, 0, giftBox.position.z).normalize();
+                    // 设置礼盒朝向为向外方向
+                    giftBox.lookAt(
+                        giftBox.position.x + outwardDirection.x,
+                        giftBox.position.y,
+                        giftBox.position.z + outwardDirection.z
+                    );
+
+                    // 添加适度的随机旋转，使每个礼盒看起来更自然
+                    giftBox.rotation.y += (Math.random() - 0.5) * Math.PI * 0.5; // 减少Y轴旋转范围
+                    giftBox.rotation.x += (Math.random() - 0.5) * 0.2; // 减少X轴旋转范围
+                    giftBox.rotation.z += (Math.random() - 0.5) * 0.2; // 减少Z轴旋转范围
+
+                    // 记录已放置的礼盒位置
+                    placedBoxes.push({
+                        x: giftBox.position.x,
+                        y: giftBox.position.y,
+                        z: giftBox.position.z
+                    });
+
+                    giftBoxes.push(giftBox);
+                    // 添加到particleGroup中，使礼盒随圣诞树一起旋转
+                    particleGroup.add(giftBox);
+
+                    console.log(`礼盒 ${i} 已添加到场景，位置:`, giftBox.position);
+                }
+            }
+        }
+
+        placeGiftBoxesOnTree();
+
+        // 鼠标/触摸控制旋转
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotationSpeed = { x: 0, y: 0 };
+
+        // 鼠标事件
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        // 鼠标移动事件 - 添加礼物盒子悬停效果
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+
+                rotationSpeed.y = deltaX * 0.01;
+                rotationSpeed.x = deltaY * 0.01;
+
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            } else {
+                // 检测鼠标悬停在礼物盒子上
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+
+                // 重置鼠标样式
+                document.body.style.cursor = 'grab';
+            }
+        });
+
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        renderer.domElement.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // 触摸事件
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            previousMousePosition = { x: touch.clientX, y: touch.clientY };
+        });
+
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (isDragging && e.touches.length > 0) {
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - previousMousePosition.x;
+                const deltaY = touch.clientY - previousMousePosition.y;
+
+                rotationSpeed.y = deltaX * 0.01;
+                rotationSpeed.x = deltaY * 0.01;
+
+                previousMousePosition = { x: touch.clientX, y: touch.clientY };
+            }
+        });
+
+        renderer.domElement.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // 点击检测
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        renderer.domElement.addEventListener('click', (e) => {
+            console.log("点击事件触发，鼠标位置:", e.clientX, e.clientY);
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            raycaster.params.Points.threshold = 0.1; // 增加点对象的检测阈值
+
+            // 暂时移除前景雪花，防止阻挡点击事件
+            let foregroundSnow = scene.children.find(child => child instanceof THREE.Points && child.renderOrder === 0);
+            if (foregroundSnow) {
+                scene.remove(foregroundSnow);
+            }
+
+            // 检测白色五角星的点击
+            const starIntersects = raycaster.intersectObjects([treeStar], true);
+            if (starIntersects.length > 0) {
+                // 触发圣诞树散开变成星空的特效
+                transformTreeToStarfield();
+                // 恢复前景雪花
+                if (foregroundSnow) scene.add(foregroundSnow);
+                return;
+            }
+
+            // 检测红色礼物粒子的点击（保留原有功能）
+            const intersects = raycaster.intersectObjects(giftMeshes);
+            if (intersects.length > 0) {
+                const gift = intersects[0].object;
+                showPhoto(gift.userData.index);
+            }
+
+            // 检测地面礼盒的点击
+            const groundGiftIntersects = raycaster.intersectObjects(groundGifts);
+            if (groundGiftIntersects.length > 0) {
+                const gift = groundGiftIntersects[0].object;
+                openGroundGift3D(gift.userData.index);
+            }
+
+            // 恢复前景雪花
+            if (foregroundSnow) scene.add(foregroundSnow);
+        });
+
+
+
+
+
+
+
+
+
+
+
+        // 显示照片
+        const photoFrame = document.getElementById('photoFrame');
+        const photoImg = document.getElementById('photoImg');
+        const closeBtn = document.getElementById('closeBtn');
+        const letterPopup = document.getElementById('letterPopup');
+        const letterClose = document.getElementById('letterClose');
+        let isPhotoOpen = false;
+
+        const photos = [
+            'img/xiaohan2.jpg',
+            'img/xiaohan3.jpg',
+            'img/xiaohan1.jpg',
+            // 'img/xiaohan1.jpg'
+        ];
+
+        function showPhoto(index) {
+            photoImg.src = photos[index % photos.length];
+
+            const angles = ['angle-1', 'angle-2', 'angle-3', 'angle-4', 'angle-5', 'angle-6'];
+            const randomAngle = angles[Math.floor(Math.random() * angles.length)];
+
+            photoFrame.className = 'photo-frame ' + randomAngle;
+            photoFrame.classList.add('show');
+            isPhotoOpen = true;
+        }
+
+        // 打字机效果函数 - 有节奏的忽快忽慢
+        function typeWriter(element, text, baseSpeed = 100) {
+            element.innerHTML = '';
+            element.classList.remove('typing-done');
+            let i = 0;
+
+            // 确保字体加载后再开始，防止中途转换字体
+            document.fonts.ready.then(() => {
+                function type() {
+                    if (i < text.length) {
+                        const char = text.charAt(i);
+
+                        // 创建一个 span 来包裹字符，可以添加渐现效果
+                        const span = document.createElement('span');
+                        span.textContent = char;
+                        span.style.opacity = '0';
+                        span.style.transition = 'opacity 0.2s ease-in';
+                        element.appendChild(span);
+
+                        // 强制重绘并显示
+                        requestAnimationFrame(() => {
+                            span.style.opacity = '1';
+                        });
+
+                        i++;
+
+                        // 计算下一个字符的延迟时间
+                        let nextSpeed = baseSpeed + (Math.random() * 150 - 50); // 基础波动
+
+                        // 遇到标点符号停顿久一点
+                        if (/[，。！？；、]/.test(char)) {
+                            nextSpeed = 600 + Math.random() * 400;
+                        } else if (/[\n]/.test(char)) {
+                            nextSpeed = 800 + Math.random() * 200; // 换行停顿
+                        } else if (/[ ]/.test(char)) {
+                            nextSpeed = 200 + Math.random() * 100;
+                        }
+
+                        // 模拟思考：偶尔突然变慢或变快
+                        if (Math.random() > 0.9) {
+                            nextSpeed += 400; // 突然卡顿
+                        } else if (Math.random() > 0.9) {
+                            nextSpeed = 50;  // 突然加快
+                        }
+
+                        setTimeout(type, nextSpeed);
+                    } else {
+                        element.classList.add('typing-done');
+                        // 显示页脚爱心
+                        const footer = document.getElementById('letterFooter');
+                        if (footer) footer.classList.add('show');
+                    }
+                }
+                type();
+            });
+        }
+
+        // 3D地面礼盒点击处理函数
+        function openGroundGift3D(giftIndex) {
+            const gift = groundGifts.find(g => g.userData.index === giftIndex);
+            if (gift) {
+                // 如果已经在动画中，则不重复触发
+                if (gift.userData.isAnimating) return;
+                gift.userData.isAnimating = true;
+
+                const initialScale = { x: gift.scale.x, y: gift.scale.y, z: gift.scale.z };
+                const initialRotation = { x: gift.rotation.x, y: gift.rotation.y, z: gift.rotation.z };
+                const initialPosition = { x: gift.position.x, y: gift.position.y, z: gift.position.z };
+
+                const startTime = Date.now();
+                const duration = 1200;
+
+                const flashLight = new THREE.PointLight(0xffffff, 1.5, 3);
+                flashLight.position.set(gift.position.x, gift.position.y + 0.5, gift.position.z);
+                scene.add(flashLight);
+
+                const particleCount = 150;
+                const particles = [];
+                const particleGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                const particleColors = [0xFFFF00, 0xFF0000, 0x00FF00, 0x0000FF, 0xFF00FF, 0xFFA500, 0x00FFFF, 0xFF1493];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particleMaterial = new THREE.MeshStandardMaterial({
+                        color: particleColors[Math.floor(Math.random() * particleColors.length)],
+                        emissive: particleColors[Math.floor(Math.random() * particleColors.length)],
+                        emissiveIntensity: 0.5,
+                        roughness: 0.1,
+                        metalness: 0.9
+                    });
+
+                    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                    particle.position.copy(gift.position);
+
+                    const speed = 3 + Math.random() * 3;
+                    const angle = Math.random() * Math.PI * 2;
+                    const verticalAngle = Math.random() * Math.PI - Math.PI / 2;
+
+                    particle.userData = {
+                        velocity: new THREE.Vector3(
+                            Math.sin(angle) * Math.cos(verticalAngle) * speed,
+                            Math.abs(Math.sin(verticalAngle)) * speed,
+                            Math.cos(angle) * Math.cos(verticalAngle) * speed
+                        ),
+                        life: 1.0,
+                        initialScale: 1 + Math.random() * 0.5
+                    };
+                    particle.scale.setScalar(particle.userData.initialScale);
+                    scene.add(particle);
+                    particles.push(particle);
+                }
+
+                function giftAnimate() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    if (progress < 0.25) {
+                        const subProgress = progress / 0.25;
+                        const easeSub = 1 - Math.pow(1 - subProgress, 2);
+
+                        gift.scale.set(
+                            initialScale.x * (1 + easeSub * 0.15),
+                            initialScale.y * (1 + easeSub * 0.15),
+                            initialScale.z * (1 + easeSub * 0.15)
+                        );
+
+                        gift.position.y = initialPosition.y + easeSub * 0.15;
+                        gift.rotation.y = initialRotation.y + easeSub * 0.2;
+                    }
+                    else if (progress < 0.6) {
+                        const subProgress = (progress - 0.25) / 0.35;
+                        const easeSub = 1 - Math.pow(1 - subProgress, 3);
+
+                        gift.scale.y = initialScale.y * (1 - easeSub * 0.4);
+                        gift.rotation.y = initialRotation.y + easeSub * Math.PI * 1.2;
+                        gift.position.y = initialPosition.y + 0.15 - easeSub * 0.15;
+                        flashLight.intensity = 1.5 + easeSub * 3;
+                    }
+                    else {
+                        const subProgress = (progress - 0.6) / 0.4;
+                        const bounce = Math.pow(Math.sin(subProgress * Math.PI), 2) * 0.15;
+
+                        gift.scale.set(
+                            initialScale.x * (1 + bounce * 0.5),
+                            initialScale.y * (0.6 + bounce),
+                            initialScale.z * (1 + bounce * 0.5)
+                        );
+
+                        gift.rotation.y = initialRotation.y + Math.PI * 1.2;
+                        gift.position.y = initialPosition.y - 0.4 * (1 - subProgress) + bounce;
+                        flashLight.intensity = 4.5 * (1 - subProgress * 0.8);
+                    }
+
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const particle = particles[i];
+                        particle.userData.life -= 0.015;
+
+                        if (particle.userData.life <= 0) {
+                            scene.remove(particle);
+                            particles.splice(i, 1);
+                        } else {
+                            particle.position.add(particle.userData.velocity.clone().multiplyScalar(0.08));
+                            particle.userData.velocity.y -= 0.04;
+                            particle.userData.velocity.multiplyScalar(0.98);
+
+                            particle.material.opacity = particle.userData.life;
+                            particle.material.emissiveIntensity = particle.userData.life * 0.8;
+
+                            const scale = particle.userData.initialScale * (0.5 + particle.userData.life * 0.5);
+                            particle.scale.setScalar(scale);
+                        }
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(giftAnimate);
+
+                        if (progress > 0.6) {
+                            if (giftIndex === 4) {
+                                if (!letterPopup.classList.contains('show')) {
+                                    const letterText = document.querySelector('.letter-text');
+                                    const letterFooter = document.getElementById('letterFooter');
+                                    letterText.innerHTML = '';
+                                    letterText.classList.remove('typing-done');
+                                    if (letterFooter) letterFooter.classList.remove('show');
+
+                                    letterPopup.classList.add('show');
+                                    createScatteredParticles();
+                                    setTimeout(() => {
+                                        letterPopup.classList.add('visible');
+                                    }, 100);
+
+                                    setTimeout(() => {
+                                        const fullText = "我一直明白你是一个很需要安全感的人。\n我完全理解你的胆怯，遇到你之前，我也不想任何人打乱自己平静平和舒适的生活节奏，我也有一堵小矮墙，就像你有个结界。\n那是一种自我保护的安全感，就像我小时候喜欢把自己“关”在一个小小的空间里，心里想着别人进不来，这是我最安全最放松的地方。\n但是，因为是你啊，\n颜若菡啊！\n我先拆了我所有围墙。\n哈哈哈哈哈细腻的人天生会把真心裹的更紧。\n其实不用害怕坦诚之后的圆满下文，会有人一直给你可靠的肩膀。\n能愿意把自己的心底的话告诉我，对我来说已经是很珍贵的事情了！\n那，我们一起勇敢前行吧，平凡的生活里，希望成为你对抗苦涩、困难、消极情绪的最可靠的战友、伙伴。\n沿途，你就是最美的风景！ ❤️";
+                                        typeWriter(letterText, fullText, 80);
+                                    }, 1200);
+                                }
+                            } else {
+                                if (!photoFrame.classList.contains('show')) {
+                                    showPhoto(giftIndex - 1);
+                                    setTimeout(() => {
+                                        photoFrame.classList.add('visible');
+                                    }, 100);
+                                }
+                            }
+                        }
+                    } else {
+                        scene.remove(flashLight);
+                        particles.forEach(particle => scene.remove(particle));
+                        // 动画结束后，重置礼盒状态，使其可以再次点击
+                        setTimeout(() => {
+                            gift.userData.isAnimating = false;
+                            // 恢复原始比例（可选，如果不恢复则保持打开状态）
+                            // gift.scale.copy(initialScale);
+                            // gift.position.copy(initialPosition);
+                            // gift.rotation.copy(initialRotation);
+                        }, 500);
+                    }
+                }
+
+                giftAnimate();
+            }
+        }
+
+        closeBtn.addEventListener('click', () => {
+            photoFrame.classList.remove('visible');
+            setTimeout(() => {
+                photoFrame.classList.remove('show');
+                isPhotoOpen = false;
+            }, 1200);
+        });
+
+        letterClose.addEventListener('click', () => {
+            letterPopup.classList.remove('visible');
+            setTimeout(() => {
+                letterPopup.classList.remove('show');
+                // 清空文字，方便下次重新开始打字动效
+                document.querySelector('.letter-text').innerHTML = '';
+                const footer = document.getElementById('letterFooter');
+                if (footer) footer.classList.remove('show');
+            }, 1200);
+        });
+
+        function createScatteredParticles() {
+            const particles = ['❤️', '🌹', '🌸', '✨', '💖'];
+            const count = 30;
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'scatter-particle';
+                particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+
+                // 随机散射参数
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 150 + Math.random() * 300;
+                const tx = (Math.cos(angle) * distance) + 'px';
+                const ty = (Math.sin(angle) * distance) + 'px';
+                const scale = 0.5 + Math.random() * 1.5;
+                const rot = (Math.random() * 360) + 'deg';
+                const duration = 1.5 + Math.random() * 1.5;
+
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                particle.style.setProperty('--tx', tx);
+                particle.style.setProperty('--ty', ty);
+                particle.style.setProperty('--scale', scale);
+                particle.style.setProperty('--rot', rot);
+                particle.style.animation = `scatter ${duration}s cubic-bezier(0.12, 0.89, 0.32, 1) forwards`;
+
+                document.body.appendChild(particle);
+
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    particle.remove();
+                }, duration * 1000);
+            }
+        }
+
+        // 圣诞树散开变成星空的特效
+        let isTransforming = false;
+        let isStarfield = false;
+        let originalTreePositions = [];
+        let starfieldAnimation = null;
+
+        function transformTreeToStarfield() {
+            if (isTransforming) return; // 防止重复触发
+            isTransforming = true;
+
+            // 保存原始树粒子位置
+            if (!isStarfield) {
+                // 变成星空
+                originalTreePositions = [];
+
+                // 遍历particleGroup中的所有粒子对象
+                particleGroup.children.forEach(child => {
+                    if (child instanceof THREE.Points &&
+                        child.geometry.attributes.position &&
+                        child.geometry.attributes.color) {
+                        const particles = child.geometry.attributes.position.array;
+                        const colors = child.geometry.attributes.color.array;
+
+                        // 保存每个粒子对象的位置和颜色
+                        const positions = [];
+                        const originalColors = [];
+
+                        for (let i = 0; i < particles.length; i += 3) {
+                            positions.push({
+                                x: particles[i],
+                                y: particles[i + 1],
+                                z: particles[i + 2]
+                            });
+
+                            originalColors.push({
+                                r: colors[i],
+                                g: colors[i + 1],
+                                b: colors[i + 2]
+                            });
+                        }
+
+                        originalTreePositions.push({
+                            points: child,
+                            positions: positions,
+                            colors: originalColors
+                        });
+                    }
+                });
+
+                // 创建星空动画
+                starfieldAnimation = {
+                    progress: 0,
+                    duration: 3000, // 3秒动画
+                    startTime: Date.now()
+                };
+
+                // 隐藏礼盒
+                giftBoxes.forEach(box => {
+                    box.visible = false;
+                });
+
+                // 改变背景为深蓝色夜空
+                document.body.style.background = 'radial-gradient(ellipse at center, #0a1551 0%, #000000 100%)';
+
+                // 显示重置按钮，隐藏星空按钮
+                document.getElementById('resetBtn').style.display = 'block';
+                document.getElementById('starfieldBtn').style.display = 'none';
+            } else {
+                // 变回圣诞树
+                starfieldAnimation = {
+                    progress: 0,
+                    duration: 3000,
+                    startTime: Date.now(),
+                    reverse: true
+                };
+
+                // 显示礼盒
+                giftBoxes.forEach(box => {
+                    box.visible = true;
+                });
+
+                // 恢复原始背景
+                document.body.style.background = 'radial-gradient(ellipse at center, #1a2a6c 0%, #0a0e27 100%)';
+
+                // 隐藏重置按钮，显示星空按钮
+                document.getElementById('resetBtn').style.display = 'none';
+                document.getElementById('starfieldBtn').style.display = 'flex';
+            }
+
+            // 更新动画状态
+            isStarfield = !isStarfield;
+
+            // 显示或隐藏重置按钮
+            document.getElementById('resetBtn').style.display = isStarfield ? 'block' : 'none';
+        }
+
+        // 重置场景函数
+        function resetScene() {
+            if (isStarfield) {
+                transformTreeToStarfield(); // 再次调用会变回圣诞树
+            }
+        }
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 处理星空动画
+            if (starfieldAnimation) {
+                const elapsed = Date.now() - starfieldAnimation.startTime;
+                const progress = Math.min(elapsed / starfieldAnimation.duration, 1);
+
+                if (progress >= 1) {
+                    // 动画完成
+                    starfieldAnimation = null;
+                    isTransforming = false;
+                } else {
+                    // 更新粒子位置和颜色
+                    originalTreePositions.forEach(objData => {
+                        if (objData.points &&
+                            objData.points.geometry &&
+                            objData.points.geometry.attributes.position &&
+                            objData.points.geometry.attributes.color) {
+                            const particles = objData.points.geometry.attributes.position.array;
+                            const colors = objData.points.geometry.attributes.color.array;
+
+                            for (let i = 0; i < objData.positions.length; i++) {
+                                const idx = i * 3;
+                                const original = objData.positions[i];
+                                const originalColor = objData.colors[i];
+
+                                if (starfieldAnimation.reverse) {
+                                    // 变回圣诞树
+                                    particles[idx] = original.x;
+                                    particles[idx + 1] = original.y;
+                                    particles[idx + 2] = original.z;
+
+                                    // 恢复原始颜色
+                                    colors[idx] = originalColor.r;
+                                    colors[idx + 1] = originalColor.g;
+                                    colors[idx + 2] = originalColor.b;
+                                } else {
+                                    // 变成星空
+                                    // 扩散到更大的空间
+                                    const spreadRadius = 10 + Math.random() * 5;
+                                    const theta = Math.random() * Math.PI * 2;
+                                    const phi = Math.random() * Math.PI;
+
+                                    particles[idx] = spreadRadius * Math.sin(phi) * Math.cos(theta);
+                                    particles[idx + 1] = spreadRadius * Math.sin(phi) * Math.sin(theta) - 5; // 向上偏移
+                                    particles[idx + 2] = spreadRadius * Math.cos(phi);
+
+                                    // 变成星星颜色（白色、黄色、蓝色等）
+                                    const starType = Math.random();
+                                    if (starType < 0.3) {
+                                        // 白色星星
+                                        colors[idx] = 0.9 + Math.random() * 0.1;
+                                        colors[idx + 1] = 0.9 + Math.random() * 0.1;
+                                        colors[idx + 2] = 0.9 + Math.random() * 0.1;
+                                    } else if (starType < 0.6) {
+                                        // 黄色星星
+                                        colors[idx] = 1.0;
+                                        colors[idx + 1] = 0.9 + Math.random() * 0.1;
+                                        colors[idx + 2] = 0.3 + Math.random() * 0.2;
+                                    } else {
+                                        // 蓝色星星
+                                        colors[idx] = 0.3 + Math.random() * 0.2;
+                                        colors[idx + 1] = 0.5 + Math.random() * 0.2;
+                                        colors[idx + 2] = 0.9 + Math.random() * 0.1;
+                                    }
+                                }
+                            }
+
+                            // 更新几何体
+                            objData.points.geometry.attributes.position.needsUpdate = true;
+                            objData.points.geometry.attributes.color.needsUpdate = true;
+
+                            // 添加星星闪烁效果
+                            if (!starfieldAnimation.reverse) {
+                                const time = Date.now() * 0.001;
+                                objData.points.material.size = 0.05 + Math.sin(time * 2 + Math.random() * 10) * 0.02;
+                                objData.points.material.opacity = 0.7 + Math.sin(time * 3 + Math.random() * 10) * 0.3;
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 更新流星效果（仅在星空状态下）
+            if (isStarfield) {
+                updateShootingStars();
+            }
+
+            // 平滑旋转
+            if (!isDragging) {
+                rotationSpeed.y *= 0.95;
+            }
+
+            // 只允许绕Y轴旋转（树干中心轴），禁止X轴翻转
+            particleGroup.rotation.y += rotationSpeed.y + 0.001; // 添加持续缓慢旋转
+
+            // 移除X轴旋转，使圣诞树只能顺时针/逆时针旋转
+            particleGroup.rotation.x = 0;
+
+            const time = Date.now() * 0.001;
+
+            // 优化礼物闪烁效果 - 减少突兀感
+            giftMeshes.forEach((gift, index) => {
+                gift.material.opacity = 0.7 + Math.sin(time * 2 + index * 0.5) * 0.15;
+                gift.scale.setScalar(1 + Math.sin(time * 1.5 + index * 0.5) * 0.08);
+            });
+
+            stars.rotation.y += 0.0001;
+            stars.rotation.x += 0.00005;
+            stars.material.opacity = 0.6 + Math.sin(time * 0.2) * 0.05;
+            stars.position.y -= 0.002;
+
+            if (stars.position.y < -5) {
+                stars.position.y = 5;
+            }
+
+            stars.position.x = Math.sin(time * 0.1) * 0.3;
+
+            // 前景雪花动画（优化版）
+            if (foregroundSnow) {
+                const positions = foregroundSnow.geometry.attributes.position.array;
+                const velocities = foregroundSnow.geometry.attributes.velocity.array;
+                const sways = foregroundSnow.geometry.attributes.sway.array;
+                const phases = foregroundSnow.geometry.attributes.phase.array;
+
+                for (let i = 0; i < positions.length / 3; i++) {
+                    positions[i * 3 + 1] -= velocities[i];
+                    const phaseOffset = phases[i];
+                    const swayRange = sways[i];
+                    positions[i * 3] += Math.sin(time + phaseOffset) * swayRange * 0.5;
+                    positions[i * 3 + 2] += Math.cos(time * 0.8 + phaseOffset) * swayRange * 0.5;
+
+                    if (positions[i * 3 + 1] < -5) {
+                        positions[i * 3 + 1] = 25;
+                        positions[i * 3] = (Math.random() - 0.5) * 40;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+                    }
+                }
+                foregroundSnow.geometry.attributes.position.needsUpdate = true;
+                foregroundSnow.material.opacity = 0.6 + Math.sin(time * 2) * 0.1;
+            }
+
+            // 礼物盒子动画
+            giftBoxes.forEach((box, index) => {
+                // 轻微左右晃动，不要翻滚
+                const swayAmount = 0.05; // 晃动幅度
+                const swaySpeed = 0.001 + index * 0.0002; // 每个盒子略有不同的速度
+                box.rotation.y = Math.sin(Date.now() * swaySpeed) * swayAmount;
+
+                // 轻微上下浮动
+                const floatAmount = 0.02;
+                const floatSpeed = 0.0008 + index * 0.0001;
+                box.position.y += Math.sin(Date.now() * floatSpeed) * floatAmount * 0.01;
+            });
+
+            // 地面礼盒动画
+            groundGifts.forEach((gift, index) => {
+                // 轻微摇摆
+                const swayAmount = 0.02;
+                const swaySpeed = 0.0008 + index * 0.0002;
+                gift.rotation.y = Math.sin(Date.now() * swaySpeed) * swayAmount;
+            });
+
+            // 树上小礼盒动画
+            treeGifts.forEach((gift, index) => {
+                // 轻微旋转
+                gift.rotation.x += 0.003;
+                gift.rotation.y += 0.002;
+            });
+
+            // 顶端五角星保持完全静止
+
+            // 绿色粒子闪烁效果
+            const greenParticles = particleGroup.children.find(child =>
+                child instanceof THREE.Points &&
+                child.material &&
+                child.material.color &&
+                child.material.color.getHex() === 0x00FF00
+            );
+
+            if (greenParticles) {
+                greenParticles.material.opacity = 0.5 + Math.sin(time * 3) * 0.2;
+                greenParticles.material.size = 0.12 + Math.sin(time * 2) * 0.03;
+            }
+
+            // 更新礼盒点击框位置
+            updateGiftClickZones();
+
+            renderer.render(scene, camera);
+        }
+
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            updateGiftClickZones();
+        });
+
+        // 地面礼盒点击处理函数
+
+        // 更新礼盒点击框位置
+        function updateGiftClickZones() {
+            for (let i = 0; i < groundGifts.length; i++) {
+                const gift = groundGifts[i];
+                const clickZone = document.getElementById('giftClick' + (i + 1));
+
+                if (gift && clickZone) {
+                    // 获取礼盒的世界坐标
+                    const giftPosition = new THREE.Vector3();
+                    gift.getWorldPosition(giftPosition);
+
+                    // 投影到屏幕坐标
+                    const screenPosition = giftPosition.clone().project(camera);
+
+                    // 转换为CSS像素坐标
+                    const x = (screenPosition.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (-screenPosition.y * 0.5 + 0.5) * window.innerHeight;
+
+                    // 边界检查：如果点击框在视口外，则隐藏
+                    if (x < -40 || x > window.innerWidth + 40 || y < -40 || y > window.innerHeight + 40) {
+                        clickZone.style.display = 'none';
+                        continue;
+                    }
+
+                    // 设置点击框位置（使用 transform 代替 left/top，性能更好且不会触发重排）
+                    clickZone.style.display = 'flex';
+                    clickZone.style.left = '0';
+                    clickZone.style.top = '0';
+                    clickZone.style.transform = `translate(${x - 40}px, ${y - 40}px)`;
+                } else if (clickZone) {
+                    clickZone.style.display = 'none';
+                }
+            }
+        }
+
+        // 密码锁 3D 场景
+        let overlayScene, overlayCamera, overlayRenderer, overlayTree, overlayFire, overlaySnow, overlayAurora;
+        let treeLights = [];
+        const overlayContainer = document.getElementById('overlay-canvas-container');
+
+        function initOverlay3D() {
+            if (!overlayContainer) return;
+
+            overlayScene = new THREE.Scene();
+            overlayCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            overlayCamera.position.set(0, 2, 8);
+            overlayCamera.lookAt(0, 1, 0);
+
+            overlayRenderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            overlayRenderer.setClearColor(0x000000, 0);
+            overlayRenderer.setSize(window.innerWidth, window.innerHeight);
+            overlayRenderer.setPixelRatio(window.devicePixelRatio);
+            overlayContainer.appendChild(overlayRenderer.domElement);
+
+            // 灯光
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            overlayScene.add(ambientLight);
+
+            // 篝火的光
+            const fireLight = new THREE.PointLight(0xff6600, 8, 25);
+            fireLight.position.set(0.8, 0.5, 0.8);
+            overlayScene.add(fireLight);
+
+            // 极光背景
+            createOverlayAurora();
+
+            // 锥形松针树
+            createOverlayTree();
+
+            // 篝火
+            createOverlayFire();
+
+            // 地面松针地毯
+            createOverlayCarpet();
+
+            // 雪花
+            createOverlaySnow();
+
+            // 地面
+            const groundGeo = new THREE.PlaneGeometry(40, 40);
+            const groundMat = new THREE.MeshStandardMaterial({
+                color: 0x050505,
+                roughness: 1,
+                metalness: 0
+            });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.5;
+            overlayScene.add(ground);
+
+            animateOverlay();
+        }
+
+        function createOverlayCarpet() {
+            const needleCount = 8000; // 进一步增加数量以达到更厚实的“铺满”效果
+            const needleGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.12, 3);
+            const needleMat = new THREE.MeshStandardMaterial({
+                roughness: 0.9,
+                metalness: 0
+            });
+
+            const instancedMesh = new THREE.InstancedMesh(needleGeo, needleMat, needleCount);
+            const matrix = new THREE.Matrix4();
+            const color = new THREE.Color();
+
+            for (let i = 0; i < needleCount; i++) {
+                // 三种分布：大部分在树下，一部分在篝火旁，其余随机散布
+                let x, z;
+                const randDist = Math.random();
+                if (randDist > 0.4) {
+                    // 树下集中分布 (密度最高)
+                    const r = Math.sqrt(Math.random()) * 4.5;
+                    const theta = Math.random() * Math.PI * 2;
+                    x = Math.cos(theta) * r - 1.6;
+                    z = Math.sin(theta) * r - 1.0;
+                } else if (randDist > 0.15) {
+                    // 篝火旁分布
+                    const r = Math.sqrt(Math.random()) * 2.5;
+                    const theta = Math.random() * Math.PI * 2;
+                    x = Math.cos(theta) * r + 0.8;
+                    z = Math.sin(theta) * r + 0.8;
+                } else {
+                    // 全场随机散布
+                    x = (Math.random() - 0.5) * 18;
+                    z = (Math.random() - 0.5) * 18;
+                }
+
+                // 稍微随机化高度，防止重叠导致的闪烁(Z-fighting)，并增加厚度感
+                const y = -0.495 + Math.random() * 0.01;
+                const position = new THREE.Vector3(x, y, z);
+
+                // 随机旋转：大部分平铺，少数斜着
+                const rotation = new THREE.Euler(
+                    Math.PI / 2 + (Math.random() - 0.5) * 0.4, // 增加俯仰角的随机性，模拟层叠
+                    Math.random() * Math.PI * 2,
+                    (Math.random() - 0.5) * 0.2
+                );
+
+                const scale = new THREE.Vector3().setScalar(0.5 + Math.random() * 0.9);
+
+                const quaternion = new THREE.Quaternion().setFromEuler(rotation);
+                matrix.compose(position, quaternion, scale);
+                instancedMesh.setMatrixAt(i, matrix);
+
+                // 颜色变化：深绿为主，夹杂枯黄和受火光影响的暖色感
+                const randColor = Math.random();
+                if (randColor > 0.92) {
+                    color.setHex(0x4d3319); // 较深的枯褐色
+                } else if (randColor > 0.85) {
+                    color.setHex(0x856600); // 枯黄色
+                } else if (randColor > 0.4) {
+                    color.setHex(0x132613); // 极深绿
+                } else {
+                    color.setHex(0x1a331a); // 标准深绿
+                }
+                instancedMesh.setColorAt(i, color);
+            }
+
+            overlayScene.add(instancedMesh);
+        }
+
+        function createOverlayAurora() {
+            const auroraCount = 3;
+            const auroraGroup = new THREE.Group();
+
+            for (let i = 0; i < auroraCount; i++) {
+                const geo = new THREE.PlaneGeometry(30, 15, 20, 20);
+                const mat = new THREE.MeshBasicMaterial({
+                    color: i === 0 ? 0x00ff99 : (i === 1 ? 0x0066ff : 0x9900ff),
+                    transparent: true,
+                    opacity: 0.15,
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending
+                });
+                const aurora = new THREE.Mesh(geo, mat);
+                aurora.position.z = -15 - i * 2;
+                aurora.position.y = 10;
+                aurora.rotation.x = Math.PI / 4;
+                auroraGroup.add(aurora);
+            }
+
+            overlayScene.add(auroraGroup);
+            overlayAurora = auroraGroup;
+        }
+
+        function createOverlayTree() {
+            const treeGroup = new THREE.Group();
+
+            // 树干 - 稍微加粗并增加纹理感
+            const trunkGeo = new THREE.CylinderGeometry(0.15, 0.22, 1.8, 12);
+            const trunkMat = new THREE.MeshStandardMaterial({
+                color: 0x2d1b0e,
+                roughness: 0.9
+            });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = -0.1;
+            treeGroup.add(trunk);
+
+            // 松针层 - 减少层数，增加单层复杂度
+            const layers = 7;
+            const leafColors = [0x1a331a, 0x244024, 0x1e3a1e];
+
+            for (let i = 0; i < layers; i++) {
+                const ratio = i / layers;
+                const layerRadius = 2.8 * (1 - ratio * 0.9);
+                const layerHeight = 1.0;
+                const layerY = 0.4 + i * 0.65;
+
+                // 1. 主叶片簇 (每一层由多个旋转的小块组成，不再是单纯的圆锥)
+                const clusterGroup = new THREE.Group();
+                const subClusters = 8;
+                for (let k = 0; k < subClusters; k++) {
+                    const subGeo = new THREE.ConeGeometry(layerRadius * 0.6, layerHeight, 4, 1);
+                    const subMat = new THREE.MeshStandardMaterial({
+                        color: leafColors[i % 3],
+                        roughness: 0.8,
+                        flatShading: true
+                    });
+                    const subLeaf = new THREE.Mesh(subGeo, subMat);
+                    const angle = (k / subClusters) * Math.PI * 2;
+                    const dist = layerRadius * 0.4;
+                    subLeaf.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+                    subLeaf.rotation.y = angle;
+                    subLeaf.rotation.x = 0.2 + Math.random() * 0.2;
+                    clusterGroup.add(subLeaf);
+                }
+                clusterGroup.position.y = layerY;
+                treeGroup.add(clusterGroup);
+
+                // 2. 更加密集的针叶细节 (Points)
+                const needleCount = 400;
+                const needleGeo = new THREE.BufferGeometry();
+                const needlePos = new Float32Array(needleCount * 3);
+                for (let j = 0; j < needleCount; j++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const r = layerRadius * (0.7 + Math.random() * 0.4);
+                    const h = (Math.random() - 0.5) * layerHeight;
+                    const currentR = r * (1 - (h + layerHeight / 2) / layerHeight);
+                    needlePos[j * 3] = Math.cos(angle) * currentR;
+                    needlePos[j * 3 + 1] = h;
+                    needlePos[j * 3 + 2] = Math.sin(angle) * currentR;
+                }
+                needleGeo.setAttribute('position', new THREE.BufferAttribute(needlePos, 3));
+                const needleMat = new THREE.PointsMaterial({
+                    color: 0x2d5a2d,
+                    size: 0.035,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const needlePoints = new THREE.Points(needleGeo, needleMat);
+                needlePoints.position.y = layerY;
+                treeGroup.add(needlePoints);
+
+                // 3. 增强霜冻效果
+                const frostCount = 60;
+                const frostGeo = new THREE.BufferGeometry();
+                const frostPos = new Float32Array(frostCount * 3);
+                for (let j = 0; j < frostCount; j++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const r = layerRadius * (0.95 + Math.random() * 0.1);
+                    const h = -layerHeight / 2 + Math.random() * 0.3;
+                    frostPos[j * 3] = Math.cos(angle) * r;
+                    frostPos[j * 3 + 1] = h;
+                    frostPos[j * 3 + 2] = Math.sin(angle) * r;
+                }
+                frostGeo.setAttribute('position', new THREE.BufferAttribute(frostPos, 3));
+                const frostMat = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.025,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const frostPoints = new THREE.Points(frostGeo, frostMat);
+                frostPoints.position.y = layerY;
+                treeGroup.add(frostPoints);
+
+                // 4. 更多装饰球
+                const ballCount = 3;
+                for (let b = 0; b < ballCount; b++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const ballRadius = 0.09 + Math.random() * 0.06;
+                    const ballGeo = new THREE.SphereGeometry(ballRadius, 16, 16);
+                    const ballColor = [0xff2222, 0xffd700, 0xeeeeee, 0x4444ff][Math.floor(Math.random() * 4)];
+                    const ballMat = new THREE.MeshStandardMaterial({
+                        color: ballColor,
+                        metalness: 0.9,
+                        roughness: 0.1
+                    });
+                    const ball = new THREE.Mesh(ballGeo, ballMat);
+                    const dist = layerRadius * 0.9;
+                    ball.position.set(
+                        Math.cos(angle) * dist,
+                        layerY - 0.15,
+                        Math.sin(angle) * dist
+                    );
+                    treeGroup.add(ball);
+                }
+
+                // 5. 优化装饰灯
+                const lightCount = 10;
+                for (let j = 0; j < lightCount; j++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = layerRadius * 0.8;
+                    const lightGeo = new THREE.SphereGeometry(0.04, 8, 8);
+                    const lightMat = new THREE.MeshBasicMaterial({
+                        color: [0xff3333, 0xffcc33, 0x33ff33, 0x33ccff][Math.floor(Math.random() * 4)],
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const light = new THREE.Mesh(lightGeo, lightMat);
+                    light.position.set(
+                        Math.cos(angle) * dist,
+                        layerY + (Math.random() - 0.5) * 0.5,
+                        Math.sin(angle) * dist
+                    );
+                    treeGroup.add(light);
+                    treeLights.push({
+                        mesh: light,
+                        phase: Math.random() * Math.PI * 2,
+                        speed: 1.5 + Math.random() * 2
+                    });
+                }
+            }
+
+            // 底部积雪
+            const snowBaseGeo = new THREE.CylinderGeometry(0.6, 1.0, 0.3, 24);
+            const snowBaseMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+            const snowBase = new THREE.Mesh(snowBaseGeo, snowBaseMat);
+            snowBase.position.y = -0.4;
+            treeGroup.add(snowBase);
+
+            treeGroup.position.set(-1.6, -0.5, -1);
+            overlayScene.add(treeGroup);
+            overlayTree = treeGroup;
+        }
+
+        function createOverlayFire() {
+            const fireGroup = new THREE.Group();
+
+            // 木柴
+            const logMat = new THREE.MeshStandardMaterial({ color: 0x1a0f00 }); // 稍微调亮一点木柴
+            for (let i = 0; i < 8; i++) {
+                const logGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8);
+                const log = new THREE.Mesh(logGeo, logMat);
+                log.rotation.z = Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+                log.rotation.y = (i / 8) * Math.PI * 2;
+                log.position.y = 0.05;
+                fireGroup.add(log);
+            }
+
+            // 火焰粒子
+            const particleCount = 200;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                resetFireParticle(positions, colors, i);
+            }
+
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const pMaterial = new THREE.PointsMaterial({
+                size: 0.25,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            overlayFire = new THREE.Points(particles, pMaterial);
+            fireGroup.add(overlayFire);
+
+            fireGroup.position.set(0.8, -0.5, 0.8); // 移向中心，确保在窄屏下可见
+            overlayScene.add(fireGroup);
+        }
+
+        function resetFireParticle(positions, colors, i) {
+            positions[i * 3] = (Math.random() - 0.5) * 0.4;
+            positions[i * 3 + 1] = Math.random() * 0.4;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 0.4;
+
+            const r = Math.random();
+            if (r < 0.7) {
+                // 橙红色
+                colors[i * 3] = 1.0;
+                colors[i * 3 + 1] = 0.2 + Math.random() * 0.4;
+                colors[i * 3 + 2] = 0.0;
+            } else if (r < 0.9) {
+                // 金黄色
+                colors[i * 3] = 1.0;
+                colors[i * 3 + 1] = 0.8 + Math.random() * 0.2;
+                colors[i * 3 + 2] = 0.1;
+            } else {
+                // 淡淡的紫色/蓝色 (魔法火)
+                colors[i * 3] = 0.5 + Math.random() * 0.5;
+                colors[i * 3 + 1] = 0.2;
+                colors[i * 3 + 2] = 1.0;
+            }
+        }
+
+        // 创建更加唯美的雪花纹理
+        function createSnowTexture() {
+            const size = 128;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // 创建径向渐变
+            const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        function createOverlaySnow() {
+            const snowCount = 2000; // 增加雪花数量
+            const snowGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(snowCount * 3);
+            const velocities = new Float32Array(snowCount); // 下落速度
+            const sways = new Float32Array(snowCount);     // 摇摆幅度
+            const phases = new Float32Array(snowCount);    // 摇摆相位
+            const sizes = new Float32Array(snowCount);     // 初始大小
+
+            for (let i = 0; i < snowCount; i++) {
+                // 初始位置
+                positions[i * 3] = (Math.random() - 0.5) * 30;
+                positions[i * 3 + 1] = Math.random() * 20 - 5;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 30;
+
+                // 物理属性
+                velocities[i] = 0.01 + Math.random() * 0.03;
+                sways[i] = 0.02 + Math.random() * 0.05;
+                phases[i] = Math.random() * Math.PI * 2;
+                sizes[i] = 0.05 + Math.random() * 0.15;
+            }
+
+            snowGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            snowGeo.setAttribute('velocity', new THREE.BufferAttribute(velocities, 1));
+            snowGeo.setAttribute('sway', new THREE.BufferAttribute(sways, 1));
+            snowGeo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+            snowGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const snowMat = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.15,
+                map: createSnowTexture(),
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            overlaySnow = new THREE.Points(snowGeo, snowMat);
+            overlayScene.add(overlaySnow);
+        }
+
+        function animateOverlay() {
+            requestAnimationFrame(animateOverlay);
+
+            const time = Date.now() * 0.001;
+
+            // 极光动画
+            if (overlayAurora) {
+                overlayAurora.children.forEach((aurora, i) => {
+                    const positions = aurora.geometry.attributes.position.array;
+                    for (let j = 0; j < positions.length; j += 3) {
+                        const x = positions[j];
+                        const z = positions[j + 2];
+                        positions[j + 1] = 10 + Math.sin(time * 0.5 + x * 0.1 + i) * 1.5 + Math.cos(time * 0.3 + z * 0.1) * 1.5;
+                    }
+                    aurora.geometry.attributes.position.needsUpdate = true;
+                    aurora.material.opacity = 0.1 + Math.sin(time * 0.2 + i) * 0.05;
+                });
+            }
+
+            // 装饰灯闪烁
+            treeLights.forEach(light => {
+                light.mesh.material.opacity = 0.4 + Math.sin(time * light.speed + light.phase) * 0.4;
+                const scale = 0.8 + Math.sin(time * light.speed + light.phase) * 0.2;
+                light.mesh.scale.set(scale, scale, scale);
+            });
+
+            // 火焰与烟雾动画
+            if (overlayFire) {
+                const positions = overlayFire.geometry.attributes.position.array;
+                const colors = overlayFire.geometry.attributes.color.array;
+                for (let i = 0; i < positions.length / 3; i++) {
+                    // 更加温和的上升速度
+                    const h = positions[i * 3 + 1];
+                    const speed = h < 0.5 ? 0.008 + Math.random() * 0.01 : 0.015 + Math.random() * 0.015;
+                    positions[i * 3 + 1] += speed;
+
+                    // 摇摆效果 - 随高度增加摇摆幅度
+                    const swayAmplitude = h * 0.08;
+                    positions[i * 3] += Math.sin(time * 3 + h * 2 + i) * swayAmplitude * 0.1;
+                    positions[i * 3 + 2] += Math.cos(time * 3 + h * 2 + i) * swayAmplitude * 0.1;
+
+                    // 颜色与生命周期：底部明亮火焰 -> 中部暗红 -> 顶部灰色烟雾
+                    if (h < 0.7) {
+                        // 火焰部分
+                        const fireLife = 1.0 - (h / 0.7);
+                        colors[i * 3] = 1.0; // R
+                        colors[i * 3 + 1] = 0.3 + fireLife * 0.7; // G
+                        colors[i * 3 + 2] = fireLife * 0.3; // B
+                    } else {
+                        // 烟雾部分
+                        const smokeLife = 1.0 - ((h - 0.7) / 1.3);
+                        const grey = 0.2 * smokeLife;
+                        colors[i * 3] = grey;
+                        colors[i * 3 + 1] = grey;
+                        colors[i * 3 + 2] = grey;
+                    }
+
+                    // 重置：高度达到上限或随机消失
+                    if (h > 2.0 || (h > 1.0 && Math.random() < 0.01)) {
+                        positions[i * 3 + 1] = 0;
+                        positions[i * 3] = (Math.random() - 0.5) * 0.25;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 0.25;
+                    }
+                }
+                overlayFire.geometry.attributes.position.needsUpdate = true;
+                overlayFire.geometry.attributes.color.needsUpdate = true;
+            }
+
+            // 雪花动画
+            if (overlaySnow) {
+                const positions = overlaySnow.geometry.attributes.position.array;
+                const velocities = overlaySnow.geometry.attributes.velocity.array;
+                const sways = overlaySnow.geometry.attributes.sway.array;
+                const phases = overlaySnow.geometry.attributes.phase.array;
+
+                for (let i = 0; i < positions.length / 3; i++) {
+                    // 下落逻辑
+                    positions[i * 3 + 1] -= velocities[i];
+
+                    // 左右摇摆（更加平滑自然）
+                    const swayRange = sways[i];
+                    const phaseOffset = phases[i];
+                    positions[i * 3] += Math.sin(time + phaseOffset) * swayRange * 0.5;
+                    positions[i * 3 + 2] += Math.cos(time * 0.8 + phaseOffset) * swayRange * 0.5;
+
+                    // 循环重置
+                    if (positions[i * 3 + 1] < -2) {
+                        positions[i * 3 + 1] = 15;
+                        positions[i * 3] = (Math.random() - 0.5) * 30;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 30;
+                    }
+                }
+                overlaySnow.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // 火光闪烁
+            const fireLight = overlayScene.children.find(child => child.isPointLight);
+            if (fireLight) {
+                fireLight.intensity = 2.5 + Math.sin(time * 12) * 1.0 + Math.random() * 0.5;
+            }
+
+            // 微弱的相机抖动增加写实感
+            overlayCamera.position.x = Math.sin(time * 0.5) * 0.1;
+            overlayCamera.position.y = 2 + Math.cos(time * 0.3) * 0.05;
+            overlayCamera.lookAt(0, 1, 0);
+
+            overlayRenderer.render(overlayScene, overlayCamera);
+        }
+
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            if (overlayRenderer) {
+                overlayCamera.aspect = window.innerWidth / window.innerHeight;
+                overlayCamera.updateProjectionMatrix();
+                overlayRenderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+
+        // 密码锁逻辑
+        const passwordOverlay = document.getElementById('password-overlay');
+        const passwordInput = document.getElementById('password-input');
+        const passwordSubmit = document.getElementById('password-submit');
+        const passwordError = document.getElementById('password-error');
+        const passwordContainer = document.querySelector('.password-container');
+
+        // 初始化
+        initOverlay3D();
+        animateOverlay();
+
+        // 点击遮罩层直接解锁
+        passwordOverlay.addEventListener('click', () => {
+            passwordOverlay.classList.add('unlocked');
+            setTimeout(() => {
+                passwordOverlay.style.display = 'none';
+                if (overlayRenderer) {
+                    overlayRenderer.dispose();
+                    overlayContainer.innerHTML = '';
+                }
+            }, 1200);
+        });
+
+        function checkPassword() {
+            const password = passwordInput.value;
+            if (password === '19950712') {
+                // 变形成爱心
+                passwordContainer.classList.add('morph-to-heart');
+                passwordInput.blur();
+
+                // 延迟移除遮罩
+                setTimeout(() => {
+                    passwordOverlay.classList.add('unlocked');
+                    setTimeout(() => {
+                        passwordOverlay.style.display = 'none';
+                        // 解锁后停止 3D 渲染以节省性能
+                        if (overlayRenderer) {
+                            overlayRenderer.dispose();
+                            overlayContainer.innerHTML = '';
+                        }
+                    }, 1200);
+                }, 1000);
+            } else {
+                passwordError.classList.add('show');
+                passwordInput.value = '';
+                passwordInput.focus();
+
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                setTimeout(() => {
+                    passwordInput.style.animation = '';
+                }, 500);
+
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        /*
+        if (passwordSubmit) {
+            passwordSubmit.addEventListener('click', checkPassword);
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkPassword();
+            });
+        }
+        */
+
+        // 添加抖动动画的 CSS
+        const shakeStyle = document.createElement('style');
+        shakeStyle.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(shakeStyle);
+
+        animate();
+    </script>
+</body>
+
+</html>
